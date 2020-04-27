@@ -14,6 +14,8 @@ type Debuger struct {
 	lastCmd string
 	breakpoints map[uint16]bool
 	step bool
+	showStep bool
+	stepSkipCount int
 }
 
 type debugFunc func(*Debuger, []string) bool
@@ -52,23 +54,41 @@ func NewDebuger(gb *GameBoy) *Debuger {
 	d := &Debuger{
 		gb: gb,
 		step: true,
+		showStep: gb.debug,
 		breakpoints: make(map[uint16]bool),
 	}
 	d.p = prompt.New(d.debugParse, d.debugComplate, prompt.OptionPrefix("debug> "))
 	return d
 }
 
-func (d *Debuger) DebugStep() {
-	pc := d.gb.Cpu.reg.PC
+func (d *Debuger) skipStep() bool {
 	if !d.step {
-		bp, exist := d.breakpoints[pc]
+		bp, exist := d.breakpoints[d.gb.Cpu.reg.PC]
 		if exist && bp {
 			d.step = true
 		} else {
-			return
+			return true
 		}
 	}
-	d.printInstruction(pc, true)
+	if d.stepSkipCount > 0 {
+		d.stepSkipCount--
+		return true
+	}
+	return false
+}
+
+func (d *Debuger) DebugStep() {
+	pc := d.gb.Cpu.reg.PC
+	skipStep := d.skipStep()
+
+	if d.showStep || !skipStep {
+		d.printInstruction(pc, !skipStep)
+	}
+
+	if skipStep {
+		return
+	}
+
 	c := true
 	for c {
 		text := d.p.Input()
@@ -101,9 +121,9 @@ func (d *Debuger) debugComplate(doc prompt.Document) []prompt.Suggest {
 func (d *Debuger) printInstruction(addr uint16, curr bool) {
 	opCodeByte := d.gb.Mem.Read(addr)
 	opCode := OPCodesMap[opCodeByte]
-	var raw []byte
+	var args = ""
 	for i := uint16(1); i < opCode.Length; i++ {
-		raw = append(raw, d.gb.Mem.Read(addr + i))
+		args += fmt.Sprintf("%02X ", d.gb.Mem.Read(d.gb.Cpu.reg.PC + i))
 	}
 
 	if curr {
@@ -111,7 +131,11 @@ func (d *Debuger) printInstruction(addr uint16, curr bool) {
 	} else {
 		fmt.Print("  ")
 	}
-	fmt.Printf("$%04X\t%s\t%X\n", addr, opCode.Mnemonic, raw)
+	if opCode.Func != nil {
+		fmt.Printf("$%04X\t%s\t%s\n", addr, opCode.Mnemonic, args)
+	} else {
+		fmt.Printf("$%04X\tUnknown opCode [%02X]\n", addr, opCodeByte)
+	}
 }
 
 func (d *Debuger) debugFuncHelp(args []string) bool {
@@ -154,7 +178,14 @@ func (d *Debuger) debugFuncDelete(args []string) bool {
 }
 
 func (d *Debuger) debugFuncNext(args []string) bool {
-	//fmt.Println("next")
+	if len(args) > 0 {
+		var err error
+		d.stepSkipCount, err = strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Println(err)
+			return true
+		}
+	}
 	return false
 }
 
@@ -261,9 +292,10 @@ func (d *Debuger) debugFuncCpu(args []string) bool {
 	}
 	fmt.Printf("== CPU Info ==\n" +
 		"Reg  : AF=%04X BC=%04X DE=%04X HL=%04X SP=%04X PC=%04X\n" +
-		"Flag : Z=%b N=%b H=%b C=%b\n\n",
+		"Flag : Z=%b N=%b H=%b C=%b IME=%b\n\n",
 		cpu.getAF(), cpu.getBC(), cpu.getDE(), cpu.getHL(), cpu.reg.SP, cpu.reg.PC,
-		btoi(cpu.getFlagZ()), btoi(cpu.getFlagN()), btoi(cpu.getFlagH()), btoi(cpu.getFlagC()))
+		btoi(cpu.getFlagZ()), btoi(cpu.getFlagN()), btoi(cpu.getFlagH()),
+		btoi(cpu.getFlagC()), btoi(cpu.getFlagIME()))
 	return true
 }
 

@@ -1,14 +1,17 @@
 package gb
 
 import (
-	"fmt"
 	"os"
 )
 
 type Cpu struct {
 	frequency int
 	reg Registers
+	// IME - Interrupt Master Enable Flag(Write Only)
+	ime bool
+
 	gb *GameBoy
+
 	showStep bool
 }
 
@@ -102,7 +105,7 @@ func (cpu *Cpu) getFlagZ() bool{
 }
 
 func (cpu *Cpu) setFlagZ() {
-	cpu.reg.F &= 0x80
+	cpu.reg.F |= 0x80
 }
 
 func (cpu *Cpu) resetFlagZ() {
@@ -114,7 +117,7 @@ func (cpu *Cpu) getFlagN() bool{
 }
 
 func (cpu *Cpu) setFlagN() {
-	cpu.reg.F &= 0x40
+	cpu.reg.F |= 0x40
 }
 
 func (cpu *Cpu) resetFlagN() {
@@ -126,7 +129,7 @@ func (cpu *Cpu) getFlagH() bool{
 }
 
 func (cpu *Cpu) setFlagH() {
-	cpu.reg.F &= 0x20
+	cpu.reg.F |= 0x20
 }
 
 func (cpu *Cpu) resetFlagH() {
@@ -138,11 +141,27 @@ func (cpu *Cpu) getFlagC() bool{
 }
 
 func (cpu *Cpu) setFlagC() {
-	cpu.reg.F &= 0x10
+	cpu.reg.F |= 0x10
 }
 
 func (cpu *Cpu) resetFlagC() {
 	cpu.reg.F &= 0xEF
+}
+
+func (cpu *Cpu) resetFlagZNHC() {
+	cpu.reg.F &= 0x0F
+}
+
+func (cpu *Cpu) getFlagIME() bool{
+	return cpu.ime
+}
+
+func (cpu *Cpu) setFlagIME(val bool) {
+	cpu.ime = val
+}
+
+func (cpu *Cpu) resetFlagIME() {
+	cpu.ime = true
 }
 
 func (cpu *Cpu) executeNextOpcode() int {
@@ -152,9 +171,7 @@ func (cpu *Cpu) executeNextOpcode() int {
 	opCode := OPCodesMap[opCodeByte]
 	if opCode.Func == nil {
 		os.Exit(0)
-	}
-	if cpu.showStep {
-		fmt.Printf("$%04X\t%s\n", cpu.reg.PC, opCode.Mnemonic)
+		return 0
 	}
 	ret := opCode.Func(cpu)
 	return opCode.Cycles[ret]
