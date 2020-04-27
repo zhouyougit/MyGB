@@ -1,2 +1,2 @@
-# myGB
+# MyGB
 Game Boy simulater
