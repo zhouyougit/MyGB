@@ -105,9 +105,9 @@ func (mem *Memory) Read(address uint16) byte {
 }
 
 func (mem *Memory) ReadUint16(address uint16) uint16 {
-	byte1 := uint16(mem.Read(address))
-	byte2 := uint16(mem.Read(address+1))
-	return byte2 << 8 | byte1
+	byteLo := uint16(mem.Read(address))
+	byteHi := uint16(mem.Read(address+1))
+	return byteHi << 8 | byteLo
 }
 
 func (mem *Memory) Write(address uint16, data byte) {
@@ -121,6 +121,13 @@ func (mem *Memory) Write(address uint16, data byte) {
 		mem.raw[address - 0x2000] = data
 	}
 	mem.raw[address] = data
+}
+
+func (mem *Memory) WriteUint16(address uint16, data uint16) {
+	byteHi := byte(data >> 8)
+	byteLo := byte(data & 0xFF)
+	mem.Write(address, byteLo)
+	mem.Write(address+1, byteHi)
 }
 
 func (mem *Memory) Dump(begin, end uint16) {
