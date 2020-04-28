@@ -115,6 +115,10 @@ func (mem *Memory) Write(address uint16, data byte) {
 		mem.cartridge.MBC.Write(address, data)
 	} else if (address >= 0xA000) && (address < 0xC000) {
 		mem.cartridge.MBC.Write(address, data)
+	} else if (address >= 0xE000) && (address < 0xFE00) {
+		// Echo of 8kB Internal RAM
+		mem.raw[address] = data
+		mem.raw[address - 0x2000] = data
 	}
 	mem.raw[address] = data
 }

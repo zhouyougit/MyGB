@@ -54,50 +54,50 @@ type Registers struct {
   Stack Pointer=$FFFE
  */
 func (cpu *Cpu) Init(gb *GameBoy) {
-	cpu.setAF(0x01B0)
-	cpu.setBC(0x0013)
-	cpu.setDE(0x00D8)
-	cpu.setHL(0x014D)
+	cpu.reg.setAF(0x01B0)
+	cpu.reg.setBC(0x0013)
+	cpu.reg.setDE(0x00D8)
+	cpu.reg.setHL(0x014D)
 	cpu.reg.SP = 0xFFFE
 	cpu.reg.PC = 0x0100
 	cpu.gb = gb
 	cpu.showStep = gb.debug
 }
 
-func (cpu *Cpu) getAF() uint16 {
-	return uint16(cpu.reg.A) << 8 | uint16(cpu.reg.F)
+func (reg *Registers) getAF() uint16 {
+	return uint16(reg.A) << 8 | uint16(reg.F)
 }
 
-func (cpu *Cpu) setAF(data uint16) {
-	cpu.reg.A = byte((data & 0xFF00) >> 8)
-	cpu.reg.F = byte(data & 0x00FF)
+func (reg *Registers) setAF(data uint16) {
+	reg.A = byte((data & 0xFF00) >> 8)
+	reg.F = byte(data & 0x00FF)
 }
 
-func (cpu *Cpu) getBC() uint16 {
-	return uint16(cpu.reg.B) << 8 | uint16(cpu.reg.C)
+func (reg *Registers) getBC() uint16 {
+	return uint16(reg.B) << 8 | uint16(reg.C)
 }
 
-func (cpu *Cpu) setBC(data uint16) {
-	cpu.reg.B = byte((data & 0xFF00) >> 8)
-	cpu.reg.C = byte(data & 0x00FF)
+func (reg *Registers) setBC(data uint16) {
+	reg.B = byte((data & 0xFF00) >> 8)
+	reg.C = byte(data & 0x00FF)
 }
 
-func (cpu *Cpu) getDE() uint16 {
-	return uint16(cpu.reg.D) << 8 | uint16(cpu.reg.E)
+func (reg *Registers) getDE() uint16 {
+	return uint16(reg.D) << 8 | uint16(reg.E)
 }
 
-func (cpu *Cpu) setDE(data uint16) {
-	cpu.reg.D = byte((data & 0xFF00) >> 8)
-	cpu.reg.E = byte(data & 0x00FF)
+func (reg *Registers) setDE(data uint16) {
+	reg.D = byte((data & 0xFF00) >> 8)
+	reg.E = byte(data & 0x00FF)
 }
 
-func (cpu *Cpu) getHL() uint16 {
-	return uint16(cpu.reg.H) << 8 | uint16(cpu.reg.L)
+func (reg *Registers) getHL() uint16 {
+	return uint16(reg.H) << 8 | uint16(reg.L)
 }
 
-func (cpu *Cpu) setHL(data uint16) {
-	cpu.reg.H = byte((data & 0xFF00) >> 8)
-	cpu.reg.L = byte(data & 0x00FF)
+func (reg *Registers) setHL(data uint16) {
+	reg.H = byte((data & 0xFF00) >> 8)
+	reg.L = byte(data & 0x00FF)
 }
 
 func (cpu *Cpu) getFlagZ() bool{
