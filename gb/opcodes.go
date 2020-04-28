@@ -518,6 +518,198 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 1,
 		Mnemonic: "LD A,A",
 	},
+	0x80: {
+		Func: (*Cpu).opCode80,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,B",
+	},
+	0x81: {
+		Func: (*Cpu).opCode81,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,C",
+	},
+	0x82: {
+		Func: (*Cpu).opCode82,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,D",
+	},
+	0x83: {
+		Func: (*Cpu).opCode83,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,E",
+	},
+	0x84: {
+		Func: (*Cpu).opCode84,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,H",
+	},
+	0x85: {
+		Func: (*Cpu).opCode85,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,L",
+	},
+	0x86: {
+		Func: (*Cpu).opCode86,
+		Cycles: [2]int{8, 0},
+		Length: 1,
+		Mnemonic: "ADD A,(HL)",
+	},
+	0x87: {
+		Func: (*Cpu).opCode87,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADD A,A",
+	},
+	0x88: {
+		Func: (*Cpu).opCode88,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,B",
+	},
+	0x89: {
+		Func: (*Cpu).opCode89,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,C",
+	},
+	0x8A: {
+		Func: (*Cpu).opCode8A,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,D",
+	},
+	0x8B: {
+		Func: (*Cpu).opCode8B,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,E",
+	},
+	0x8C: {
+		Func: (*Cpu).opCode8C,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,H",
+	},
+	0x8D: {
+		Func: (*Cpu).opCode8D,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,L",
+	},
+	0x8E: {
+		Func: (*Cpu).opCode8E,
+		Cycles: [2]int{8, 0},
+		Length: 1,
+		Mnemonic: "ADC A,(HL)",
+	},
+	0x8F: {
+		Func: (*Cpu).opCode8F,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "ADC A,A",
+	},
+	0x90: {
+		Func: (*Cpu).opCode90,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB B",
+	},
+	0x91: {
+		Func: (*Cpu).opCode91,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB C",
+	},
+	0x92: {
+		Func: (*Cpu).opCode92,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB D",
+	},
+	0x93: {
+		Func: (*Cpu).opCode93,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB E",
+	},
+	0x94: {
+		Func: (*Cpu).opCode94,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB H",
+	},
+	0x95: {
+		Func: (*Cpu).opCode95,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB L",
+	},
+	0x96: {
+		Func: (*Cpu).opCode96,
+		Cycles: [2]int{8, 0},
+		Length: 1,
+		Mnemonic: "SUB (HL)",
+	},
+	0x97: {
+		Func: (*Cpu).opCode97,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SUB A",
+	},
+	0x98: {
+		Func: (*Cpu).opCode98,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,B",
+	},
+	0x99: {
+		Func: (*Cpu).opCode99,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,C",
+	},
+	0x9A: {
+		Func: (*Cpu).opCode9A,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,D",
+	},
+	0x9B: {
+		Func: (*Cpu).opCode9B,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,E",
+	},
+	0x9C: {
+		Func: (*Cpu).opCode9C,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,H",
+	},
+	0x9D: {
+		Func: (*Cpu).opCode9D,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,L",
+	},
+	0x9E: {
+		Func: (*Cpu).opCode9E,
+		Cycles: [2]int{8, 0},
+		Length: 1,
+		Mnemonic: "SBC A,(HL)",
+	},
+	0x9F: {
+		Func: (*Cpu).opCode9F,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SBC A,A",
+	},
 	0xA0: {
 		Func: (*Cpu).opCodeA0,
 		Cycles: [2]int{4, 0},
@@ -686,6 +878,18 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 1,
 		Mnemonic: "PUSH BC",
 	},
+	0xC6: {
+		Func: (*Cpu).opCodeC6,
+		Cycles: [2]int{8, 0},
+		Length: 2,
+		Mnemonic: "ADD A,d8",
+	},
+	0xCE: {
+		Func: (*Cpu).opCodeCE,
+		Cycles: [2]int{8, 0},
+		Length: 2,
+		Mnemonic: "ADC A,d8",
+	},
 	0xD1: {
 		Func: (*Cpu).opCodeD1,
 		Cycles: [2]int{12, 0},
@@ -697,6 +901,18 @@ var OPCodesMap = [0x100]OPCode {
 		Cycles: [2]int{16, 0},
 		Length: 1,
 		Mnemonic: "PUSH DE",
+	},
+	0xD6: {
+		Func: (*Cpu).opCodeD6,
+		Cycles: [2]int{8, 0},
+		Length: 2,
+		Mnemonic: "SUB d8",
+	},
+	0xDE: {
+		Func: (*Cpu).opCodeDE,
+		Cycles: [2]int{8, 0},
+		Length: 2,
+		Mnemonic: "SBC A,d8",
 	},
 	0xE0: {
 		Func: (*Cpu).opCodeE0,
@@ -1334,6 +1550,700 @@ func (cpu *Cpu)opCode7F() byte {
 	return 0
 }
 
+// ADD A,B
+func (cpu *Cpu)opCode80() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.B)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,C
+func (cpu *Cpu)opCode81() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.C)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,D
+func (cpu *Cpu)opCode82() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.D)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,E
+func (cpu *Cpu)opCode83() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.E)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,H
+func (cpu *Cpu)opCode84() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.H)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,L
+func (cpu *Cpu)opCode85() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.L)
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,(HL)
+func (cpu *Cpu)opCode86() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.gb.Mem.Read(cpu.reg.getHL()))
+	res := v1 + v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v2 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADD A,A
+func (cpu *Cpu)opCode87() byte {
+	v1 := uint16(cpu.reg.A)
+	res := v1 + v1
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := v1 ^ v1 ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,B
+func (cpu *Cpu)opCode88() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.B)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,C
+func (cpu *Cpu)opCode89() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.C)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,D
+func (cpu *Cpu)opCode8A() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.D)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,E
+func (cpu *Cpu)opCode8B() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.E)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,H
+func (cpu *Cpu)opCode8C() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.H)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,L
+func (cpu *Cpu)opCode8D() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.reg.L)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,(HL)
+func (cpu *Cpu)opCode8E() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.gb.Mem.Read(cpu.reg.getHL()))
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,A
+func (cpu *Cpu)opCode8F() byte {
+	v1 := uint16(cpu.reg.A)
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v1 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v1 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB B
+func (cpu *Cpu)opCode90() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.B)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB C
+func (cpu *Cpu)opCode91() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.C)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB D
+func (cpu *Cpu)opCode92() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.D)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB E
+func (cpu *Cpu)opCode93() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.E)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB H
+func (cpu *Cpu)opCode94() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.H)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB L
+func (cpu *Cpu)opCode95() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.L)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB (HL)
+func (cpu *Cpu)opCode96() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.gb.Mem.Read(cpu.reg.getHL()))
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SUB A
+func (cpu *Cpu)opCode97() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.A)
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,B
+func (cpu *Cpu)opCode98() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.B)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,C
+func (cpu *Cpu)opCode99() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.C)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,D
+func (cpu *Cpu)opCode9A() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.D)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,E
+func (cpu *Cpu)opCode9B() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.E)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,H
+func (cpu *Cpu)opCode9C() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.H)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,L
+func (cpu *Cpu)opCode9D() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.L)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,(HL)
+func (cpu *Cpu)opCode9E() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.gb.Mem.Read(cpu.reg.getHL()))
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,A
+func (cpu *Cpu)opCode9F() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.reg.A)
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
 // AND B
 func (cpu *Cpu)opCodeA0() byte {
 	cpu.reg.A = cpu.reg.A & cpu.reg.B
@@ -1612,6 +2522,51 @@ func (cpu *Cpu)opCodeC5() byte {
 	return 0
 }
 
+// ADD A,d8
+func (cpu *Cpu)opCodeC6() byte {
+	a := uint16(cpu.reg.A)
+	arg := uint16(cpu.gb.Mem.Read(cpu.reg.PC))
+	cpu.reg.PC++
+	res := a + arg
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	carry := a ^ arg ^ res
+	if (carry & 0x10) > 0 {
+		cpu.setFlagH()
+	}
+	if (carry & 0x100) > 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// ADC A,d8
+func (cpu *Cpu)opCodeCE() byte {
+	v1 := uint16(cpu.reg.A)
+	v2 := uint16(cpu.gb.Mem.Read(cpu.reg.PC))
+	cpu.reg.PC++
+	carry := uint16(0)
+	if cpu.getFlagC() {
+		carry = uint16(1)
+	}
+	res := v1 + v2 + carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if byte(res) == 0 {
+		cpu.setFlagZ()
+	}
+	if (v1 & 0x000F) + (v2 & 0x000F) + carry > 0x000F {
+		cpu.setFlagH()
+	}
+	if res > 0x00FF {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
 // POP DE
 func (cpu *Cpu)opCodeD1() byte {
 	cpu.reg.setDE(cpu.gb.Mem.ReadUint16(cpu.reg.SP))
@@ -1623,6 +2578,52 @@ func (cpu *Cpu)opCodeD1() byte {
 func (cpu *Cpu)opCodeD5() byte {
 	cpu.reg.SP -= 2
 	cpu.gb.Mem.WriteUint16(cpu.reg.SP, cpu.reg.getDE())
+	return 0
+}
+
+// SUB d8
+func (cpu *Cpu)opCodeD6() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.gb.Mem.Read(cpu.reg.PC))
+	cpu.reg.PC++
+	res := v1 - v2
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
+	return 0
+}
+
+// SBC A,d8
+func (cpu *Cpu)opCodeDE() byte {
+	v1 := int16(cpu.reg.A)
+	v2 := int16(cpu.gb.Mem.Read(cpu.reg.PC))
+	carry := int16(0)
+	if cpu.getFlagC() {
+		carry = int16(1)
+	}
+	cpu.reg.PC++
+	res := v1 - v2 - carry
+	cpu.reg.A = byte(res)
+	cpu.resetFlagZNHC()
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	}
+	cpu.setFlagN()
+	if (v1 & 0xF) - (v2 & 0xF) - (carry & 0xF) < 0 {
+		cpu.setFlagH()
+	}
+	if res < 0 {
+		cpu.setFlagC()
+	}
 	return 0
 }
 

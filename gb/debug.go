@@ -293,7 +293,7 @@ func (d *Debuger) debugFuncCpu(args []string) bool {
 	fmt.Printf("== CPU Info ==\n" +
 		"Reg  : AF=%04X BC=%04X DE=%04X HL=%04X SP=%04X PC=%04X\n" +
 		"Flag : Z=%b N=%b H=%b C=%b IME=%b\n\n",
-		cpu.getAF(), cpu.getBC(), cpu.getDE(), cpu.getHL(), cpu.reg.SP, cpu.reg.PC,
+		cpu.reg.getAF(), cpu.reg.getBC(), cpu.reg.getDE(), cpu.reg.getHL(), cpu.reg.SP, cpu.reg.PC,
 		btoi(cpu.getFlagZ()), btoi(cpu.getFlagN()), btoi(cpu.getFlagH()),
 		btoi(cpu.getFlagC()), btoi(cpu.getFlagIME()))
 	return true
