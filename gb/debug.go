@@ -119,11 +119,20 @@ func (d *Debuger) debugComplate(doc prompt.Document) []prompt.Suggest {
 }
 
 func (d *Debuger) printInstruction(addr uint16, curr bool) {
+	var opCode OPCode
+	argsAddr := addr + 1
 	opCodeByte := d.gb.Mem.Read(addr)
-	opCode := OPCodesMap[opCodeByte]
+	if opCodeByte == 0xCB {
+		opCodeByteCB := d.gb.Mem.Read(addr + 1)
+		opCode = OPCodesMapCB[opCodeByteCB]
+		argsAddr++
+	} else {
+		opCode = OPCodesMap[opCodeByte]
+	}
+
 	var args = ""
-	for i := uint16(1); i < opCode.Length; i++ {
-		args += fmt.Sprintf("%02X ", d.gb.Mem.Read(d.gb.Cpu.reg.PC + i))
+	for i := uint16(0); i < opCode.Length - 1; i++ {
+		args += fmt.Sprintf("%02X ", d.gb.Mem.Read(argsAddr + i))
 	}
 
 	if curr {
@@ -132,9 +141,13 @@ func (d *Debuger) printInstruction(addr uint16, curr bool) {
 		fmt.Print("  ")
 	}
 	if opCode.Func != nil {
-		fmt.Printf("$%04X\t%s\t%s\n", addr, opCode.Mnemonic, args)
+		if len(opCode.Mnemonic) < 8 {
+			fmt.Printf("$%04X\t%s\t\t%s\n", addr, opCode.Mnemonic, args)
+		} else {
+			fmt.Printf("$%04X\t%s\t%s\n", addr, opCode.Mnemonic, args)
+		}
 	} else {
-		fmt.Printf("$%04X\tUnknown opCode [%02X]\n", addr, opCodeByte)
+		fmt.Printf("$%04X\tUnknown opCode [0x%02X]\n", addr, opCodeByte)
 	}
 }
 

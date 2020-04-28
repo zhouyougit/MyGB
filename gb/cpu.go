@@ -166,9 +166,16 @@ func (cpu *Cpu) resetFlagIME() {
 
 func (cpu *Cpu) executeNextOpcode() int {
 	cpu.gb.Debuger.DebugStep()
+	var opCode OPCode
 	opCodeByte := cpu.gb.Mem.Read(cpu.reg.PC)
 	cpu.reg.PC++
-	opCode := OPCodesMap[opCodeByte]
+	if opCodeByte == 0xCB {
+		opCodeByteCB := cpu.gb.Mem.Read(cpu.reg.PC)
+		cpu.reg.PC++
+		opCode = OPCodesMapCB[opCodeByteCB]
+	} else {
+		opCode = OPCodesMap[opCodeByte]
+	}
 	if opCode.Func == nil {
 		os.Exit(0)
 		return 0
