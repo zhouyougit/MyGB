@@ -255,7 +255,7 @@ func (cpu *Cpu) checkInterrupt() int {
 			continue
 		}
 		cpu.runInterrupt(i)
-		return 16 + 4 // PUSH PC + JP (HL)
+		return 16 + 4 // TODO: Interrupt cycles = PUSH PC + JP (HL)?
 	}
 	return 0
 }

@@ -1325,7 +1325,7 @@ var OPCodesMap = [0x100]OPCode {
 	0xFE: {
 		Func: (*Cpu).opCodeFE,
 		Cycles: [2]int{8, 0},
-		Length: 1,
+		Length: 2,
 		Mnemonic: "CP d8",
 	},
 }
@@ -1382,7 +1382,7 @@ func (cpu *Cpu)opCode05() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1460,13 +1460,13 @@ func (cpu *Cpu)opCode0C() byte {
 // DEC C
 func (cpu *Cpu)opCode0D() byte {
 	v := cpu.reg.C
-	cpu.reg.B = v - 1
+	cpu.reg.C = v - 1
 	if cpu.reg.C == 0 {
 		cpu.setFlagZ()
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1535,7 +1535,7 @@ func (cpu *Cpu)opCode15() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1611,7 +1611,7 @@ func (cpu *Cpu)opCode1D() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1686,7 +1686,7 @@ func (cpu *Cpu)opCode25() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1809,7 +1809,7 @@ func (cpu *Cpu)opCode2D() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1892,7 +1892,7 @@ func (cpu *Cpu)opCode35() byte {
 	} else {
 		cpu.resetFlagZ()
 	}
-	cpu.resetFlagN()
+	cpu.setFlagN()
 	if (v & 0xF) - 1 < 0 {
 		cpu.setFlagH()
 	} else {
@@ -1956,7 +1956,7 @@ func (cpu *Cpu)opCode3A() byte {
 	return 0
 }
 
-// DEC BC
+// DEC SP
 func (cpu *Cpu)opCode3B() byte {
 	cpu.reg.SP--
 	return 0
@@ -3743,7 +3743,6 @@ func (cpu *Cpu)opCodeF0() byte {
 	arg := cpu.gb.Mem.Read(cpu.reg.PC)
 	cpu.reg.PC++
 	cpu.reg.A = cpu.gb.Mem.Read(0xFF00 + uint16(arg))
-	cpu.reg.PC++
 	return 0
 }
 

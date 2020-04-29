@@ -32,7 +32,14 @@ var (
 
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-			<-sigs
+			for {
+				sigIn := <- sigs
+				if sigIn == syscall.SIGINT {
+					gameBoy.Debuger.SetStep()
+				} else if sigIn == syscall.SIGTERM {
+					break
+				}
+			}
 			close(stop)
 
 			gameBoy.WaitFinish()

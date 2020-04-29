@@ -37,6 +37,7 @@ var debugFuncMap = map[string]debugFunc {
 	"b" : (* Debuger).debugFuncBreak,
 	"info" : (* Debuger).debugFuncInfo,
 	"delete" : (* Debuger).debugFuncDelete,
+	"set" : (* Debuger).debugFuncSet,
 	"exit" : (* Debuger).debugFuncExit,
 }
 
@@ -45,10 +46,17 @@ var debugFuncInfoMap = map[string]debugFunc {
 	"cpu" : (* Debuger).debugFuncInfoCpu,
 	"int" : (* Debuger).debugFuncInfoInt,
 	"cart" : (* Debuger).debugFuncInfoCartridge,
+	"timer" : (* Debuger).debugFuncInfoTimer,
+	"lcd" : (* Debuger).debugFuncInfoLCD,
+	"cycle" : (* Debuger).debugFuncInfoCycle,
 }
 
 var debugFuncDeleteMap = map[string]debugFunc {
 	"bp" : (* Debuger).debugFuncDeleteBreakpoint,
+}
+
+var debugFuncSetMap = map[string]debugFunc {
+	"step" : (* Debuger).debugFuncSetShowStep,
 }
 
 func NewDebuger(gb *GameBoy) *Debuger {
@@ -94,6 +102,10 @@ func (d *Debuger) DebugOpcode() {
 	}
 
 	d.doDebugInteract()
+}
+
+func (d *Debuger) SetStep() {
+	d.step = true
 }
 
 func (d *Debuger) DebugInterrupt(i Interrupt) {
@@ -182,8 +194,12 @@ func (d *Debuger) debugFuncHelp(args []string) bool {
 		"break,b\tCreate breakpoint at address. eg. 'break 0x0150'\n" +
 		"info bp\tPrint all breakpoints\n" +
 		"info cpu\tPrint CPU info\n" +
+		"info cycle\tPrint Main Cycle info\n" +
 		"info cart\tPrint Cartridge info\n" +
 		"info int\tPrint Interrupt info\n" +
+		"info timer\tPrint Timer info\n" +
+		"info lcd\tPrint LCD info\n" +
+		"set step\tSet showStep status.\n" +
 		"delete bp\tbp\tDelete breakpoint at address. eg. 'delete bp 0x0150'\n" +
 		"exit\t\tExit Program\n\n")
 	return true
@@ -210,6 +226,10 @@ func (d *Debuger) debugFuncInfo(args []string) bool {
 
 func (d *Debuger) debugFuncDelete(args []string) bool {
 	return d.debugFuncSubCmd(debugFuncDeleteMap, args)
+}
+
+func (d *Debuger) debugFuncSet(args []string) bool {
+	return d.debugFuncSubCmd(debugFuncSetMap, args)
 }
 
 func (d *Debuger) debugFuncNext(args []string) bool {
@@ -339,7 +359,7 @@ func (d *Debuger) debugFuncInfoInt(args []string) bool {
 	flag := d.gb.Mem.Read(IF_ADDR)
 
 	fmt.Printf("== Interrupt Info ==\n" +
-		"Name\t\tEnable\tFlag" +
+		"Name\t\tEnable\tFlag\n" +
 		"IME\t\t%v\t-\n" +
 		"V-Blank\t\t%t\t%t\n" +
 		"LCD STAT\t%t\t%t\n" +
@@ -348,11 +368,11 @@ func (d *Debuger) debugFuncInfoInt(args []string) bool {
 		"Joypad\t\t%t\t%t\n" +
 		"\n",
 		d.gb.Cpu.IME,
-		enable & (0x1 <<IntVBlank) > 0, flag & (0x1 <<IntVBlank) > 0,
-		enable & (0x1 <<IntLcdStat) > 0, flag & (0x1 <<IntLcdStat) > 0,
-		enable & (0x1 <<IntTimer) > 0, flag & (0x1 <<IntTimer) > 0,
-		enable & (0x1 <<IntSerial) > 0, flag & (0x1 <<IntSerial) > 0,
-		enable & (0x1 <<IntJoypad) > 0, flag & (0x1 <<IntJoypad) > 0)
+		enable & IntVBlank.Mask > 0, flag & IntVBlank.Mask > 0,
+		enable & IntLcdStat.Mask > 0, flag & IntLcdStat.Mask > 0,
+		enable & IntTimer.Mask > 0, flag & IntTimer.Mask > 0,
+		enable & IntSerial.Mask > 0, flag & IntSerial.Mask > 0,
+		enable & IntJoypad.Mask > 0, flag & IntJoypad.Mask > 0)
 	return true
 }
 
@@ -361,11 +381,79 @@ func (d *Debuger) debugFuncInfoCartridge(args []string) bool {
 	return true
 }
 
+func (d *Debuger) debugFuncInfoCycle(args []string) bool {
+	fmt.Printf("Main Cycles : %d/%d\n", d.gb.currCycles, d.gb.cyclesInFrame)
+	return true
+}
+
+func (d *Debuger) debugFuncInfoLCD(args []string) bool {
+	l := d.gb.Lcd
+	fmt.Printf("== LCD Info ==\n" +
+		"LCD Display Enabled\t: %t\n" +
+		"LCD Cycles\t\t: %d/%d\n",
+		l.isLCDDisplayEnabled(), l.scanLineCounter, LCD_FULL_CYCLES)
+	ly := d.gb.Mem.Read(LCD_LY_ADDR)
+	lyc := d.gb.Mem.Read(LCD_LYC_ADDR)
+	fmt.Printf("Scan Line (LY)\t\t: %d (LYC=%d)\n", ly, lyc)
+
+	stat := d.gb.Mem.Read(LCD_STAT_ADDR)
+
+	mode := stat & 0b11
+	switch mode {
+	case 0:
+		fmt.Printf("LCD Mode\t\t: 0 (H-Blank)\n")
+	case 1:
+		fmt.Printf("LCD Mode\t\t: 1 (V-Blank)\n")
+	case 2:
+		fmt.Printf("LCD Mode\t\t: 2 (Searching OAM)\n")
+	case 3:
+		fmt.Printf("LCD Mode\t\t: 3 (Transfering Data)\n")
+	}
+
+	fmt.Printf("Int Enabled\t\t: Mode0=%t Mode1=%t Mode2=%t LYC=%t\n",
+		stat & 0b1000 == 0b1000, stat & 0b10000 == 0b10000,
+		stat & 0b100000 == 0b100000, stat & 0b1000000 == 0b1000000)
+
+	fmt.Println("")
+
+	return true
+}
+
+func (d *Debuger) debugFuncInfoTimer(args []string) bool {
+	t := d.gb.Timer
+	fmt.Printf("== Timer Info ==\n")
+	tima := d.gb.Mem.Read(TIMER_TIMA_ADDR)
+	tma := d.gb.Mem.Read(TIMER_TMA_ADDR)
+	div := d.gb.Mem.Read(TIMER_DIV_ADDR)
+
+	fmt.Printf("Started\t\t: %t\n" +
+		"Freq\t\t: %d\n" +
+		"TIMA Cycles\t: %d/%d\n" +
+		"TIMA/TMA\t: %02X/%02X\n" +
+		"DIV Cycles\t: %d/%d\n" +
+		"DIV\t\t: %02X\n\n",
+		t.isTimerStarted(),
+		t.getTimerFreq(),
+		t.cyclesCounter, d.gb.Cpu.frequency / t.getTimerFreq(),
+		tima, tma,
+		t.dividerCounter, t.dividerMax,
+		div)
+	return true
+}
+
 func (d *Debuger) debugFuncExit(args []string) bool {
 	os.Exit(0)
 	return false
 }
 
+func (d *Debuger) debugFuncSetShowStep(args []string) bool {
+	if len(args) < 1 {
+		fmt.Printf("Usage : set step [true|false].\n")
+	}
+	d.showStep, _ = strconv.ParseBool(args[0])
+	fmt.Printf("Show Step : %v\n", d.showStep)
+	return true
+}
 
 func parseUint16(text string) (uint16, error) {
 	val, err := strconv.ParseUint(text, 0, 16)

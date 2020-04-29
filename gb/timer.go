@@ -1,10 +1,10 @@
 package gb
 
 const (
-	TIMER_DIV uint16 = 0xFF04
-	TIMER_TIMA uint16 = 0xFF05
-	TIMER_TMA uint16 = 0xFF06
-	TIMER_TAC uint16 = 0xFF07
+	TIMER_DIV_ADDR  uint16 = 0xFF04
+	TIMER_TIMA_ADDR uint16 = 0xFF05
+	TIMER_TMA_ADDR  uint16 = 0xFF06
+	TIMER_TAC_ADDR  uint16 = 0xFF07
 
 	TIMER_TAC_START_MASK byte = 0b100
 	TIMER_TAC_FREQ_MASK byte = 0b11
@@ -46,11 +46,11 @@ FF07 - TAC - Timer Control (R/W)
 
  */
 func (t *Timer) isTimerStarted() bool {
-	return t.gb.Mem.Read(TIMER_TAC) & TIMER_TAC_START_MASK == TIMER_TAC_START_MASK
+	return t.gb.Mem.Read(TIMER_TAC_ADDR) & TIMER_TAC_START_MASK == TIMER_TAC_START_MASK
 }
 
 func (t *Timer) getTimerFreq() int {
-	return TimerFreqMap[t.gb.Mem.Read(TIMER_TAC) & TIMER_TAC_FREQ_MASK]
+	return TimerFreqMap[t.gb.Mem.Read(TIMER_TAC_ADDR) & TIMER_TAC_FREQ_MASK]
 }
 
 func (t *Timer) update(cycles int) {
@@ -63,12 +63,12 @@ func (t *Timer) update(cycles int) {
 	if t.cyclesCounter >= (t.gb.Cpu.frequency / t.getTimerFreq()) {
 		t.cyclesCounter -= t.gb.Cpu.frequency / t.getTimerFreq()
 
-		tima := t.gb.Mem.Read(TIMER_TIMA)
+		tima := t.gb.Mem.Read(TIMER_TIMA_ADDR)
 		if tima == 0xFF {
-			t.gb.Mem.Write(TIMER_TIMA, t.gb.Mem.Read(TIMER_TMA))
+			t.gb.Mem.Write(TIMER_TIMA_ADDR, t.gb.Mem.Read(TIMER_TMA_ADDR))
 			t.gb.Cpu.RequestInterrupt(IntTimer)
 		} else {
-			t.gb.Mem.Write(TIMER_TIMA, tima + 1)
+			t.gb.Mem.Write(TIMER_TIMA_ADDR, tima + 1)
 		}
 	}
 }
@@ -77,6 +77,6 @@ func (t *Timer) updateDivider(cycles int) {
 	t.dividerCounter += cycles
 	if t.dividerCounter >= t.dividerMax {
 		t.dividerCounter -= t.dividerMax
-		t.gb.Mem.Write(TIMER_DIV, t.gb.Mem.Read(TIMER_DIV) + 1)
+		t.gb.Mem.Write(TIMER_DIV_ADDR, t.gb.Mem.Read(TIMER_DIV_ADDR) + 1)
 	}
 }

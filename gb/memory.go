@@ -122,6 +122,9 @@ func (mem *Memory) Write(address uint16, data byte) {
 	} else if address == 0xFF04 {
 		//FF04 - DIV - Divider Register (R/W)
 		mem.raw[address] = 0x00
+	} else if address == 0xFF44 {
+		//FF44 - LY - LCDC Y-Coordinate (R)
+		mem.raw[address] = 0x00
 	}
 	mem.raw[address] = data
 }

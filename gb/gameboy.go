@@ -21,6 +21,7 @@ type GameBoy struct {
 	Cpu	Cpu
 	Mem Memory
 	Timer Timer
+	Lcd Lcd
 
 	//Video
 	//Sound
@@ -31,6 +32,7 @@ type GameBoy struct {
 	debug bool
 	fps int
 	cyclesInFrame int
+	currCycles int
 
 	finish sync.WaitGroup
 }
@@ -43,6 +45,7 @@ func NewGameBoy(args *GameBoyArgs) (*GameBoy, error) {
 	gb.Cartridge.romPath = args.ROMPath
 	gb.Cpu.frequency = CPU_MAIN_FREQUENCY
 	gb.cyclesInFrame = gb.Cpu.frequency / gb.fps
+	gb.currCycles = 0
 
 	gb.init()
 	return gb, nil
@@ -78,6 +81,8 @@ func (gb *GameBoy) init() error {
 
 	gb.Timer.Init(gb)
 
+	gb.Lcd.Init(gb)
+
 	if gb.debug {
 		gb.Debuger = NewDebuger(gb)
 	}
@@ -85,16 +90,16 @@ func (gb *GameBoy) init() error {
 }
 
 func (gb *GameBoy) updateFrame() {
-	totalCycles := gb.cyclesInFrame
-
-	for totalCycles > 0 {
+	for gb.currCycles < gb.cyclesInFrame {
 		gb.Debuger.DebugOpcode()
 		cycles := gb.Cpu.checkInterrupt()
 		if cycles == 0 {
 			cycles = gb.Cpu.executeNextOpcode()
 		}
 
-		totalCycles -= cycles
+		gb.currCycles += cycles
 		gb.Timer.update(cycles)
+		gb.Lcd.update(cycles)
 	}
+	gb.currCycles -= gb.cyclesInFrame
 }
