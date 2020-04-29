@@ -4,6 +4,9 @@ import (
 	"sync"
 	"time"
 )
+const (
+	CPU_MAIN_FREQUENCY = 4194304
+)
 
 type GameBoyArgs struct {
 	Debug bool
@@ -17,6 +20,7 @@ type GameBoy struct {
 	Cartridge Cartridge
 	Cpu	Cpu
 	Mem Memory
+	Timer Timer
 
 	//Video
 	//Sound
@@ -26,11 +30,10 @@ type GameBoy struct {
 	//Args
 	debug bool
 	fps int
+	cyclesInFrame int
 
 	finish sync.WaitGroup
 }
-
-
 
 func NewGameBoy(args *GameBoyArgs) (*GameBoy, error) {
 	gb := &GameBoy{}
@@ -38,7 +41,8 @@ func NewGameBoy(args *GameBoyArgs) (*GameBoy, error) {
 	gb.debug = args.Debug
 	gb.fps = args.FPS
 	gb.Cartridge.romPath = args.ROMPath
-	gb.Cpu.frequency = 4194304
+	gb.Cpu.frequency = CPU_MAIN_FREQUENCY
+	gb.cyclesInFrame = gb.Cpu.frequency / gb.fps
 
 	gb.init()
 	return gb, nil
@@ -72,6 +76,8 @@ func (gb *GameBoy) init() error {
 	//gb.Mem.Dump(0x0185, 0x0187)
 	gb.Cpu.Init(gb)
 
+	gb.Timer.Init(gb)
+
 	if gb.debug {
 		gb.Debuger = NewDebuger(gb)
 	}
@@ -79,10 +85,16 @@ func (gb *GameBoy) init() error {
 }
 
 func (gb *GameBoy) updateFrame() {
-	totalCycles := gb.Cpu.frequency / gb.fps
+	totalCycles := gb.cyclesInFrame
 
 	for totalCycles > 0 {
-		cycles := gb.Cpu.executeNextOpcode()
+		gb.Debuger.DebugOpcode()
+		cycles := gb.Cpu.checkInterrupt()
+		if cycles == 0 {
+			cycles = gb.Cpu.executeNextOpcode()
+		}
+
 		totalCycles -= cycles
+		gb.Timer.update(cycles)
 	}
 }

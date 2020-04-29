@@ -119,6 +119,9 @@ func (mem *Memory) Write(address uint16, data byte) {
 		// Echo of 8kB Internal RAM
 		mem.raw[address] = data
 		mem.raw[address - 0x2000] = data
+	} else if address == 0xFF04 {
+		//FF04 - DIV - Divider Register (R/W)
+		mem.raw[address] = 0x00
 	}
 	mem.raw[address] = data
 }

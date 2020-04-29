@@ -92,6 +92,12 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 2,
 		Mnemonic: "LD C,d8",
 	},
+	0x10: {
+		Func: (*Cpu).opCode10,
+		Cycles: [2]int{4, 0},
+		Length: 2,
+		Mnemonic: "STOP",
+	},
 	0x11: {
 		Func: (*Cpu).opCode11,
 		Cycles: [2]int{12, 0},
@@ -206,6 +212,12 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 2,
 		Mnemonic: "LD H,d8",
 	},
+	0x27: {
+		Func: (*Cpu).opCode27,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "DAA",
+	},
 	0x28: {
 		Func: (*Cpu).opCode28,
 		Cycles: [2]int{12, 8},
@@ -247,6 +259,12 @@ var OPCodesMap = [0x100]OPCode {
 		Cycles: [2]int{8, 0},
 		Length: 2,
 		Mnemonic: "LD L,d8",
+	},
+	0x2F: {
+		Func: (*Cpu).opCode2F,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "CPL",
 	},
 	0x30: {
 		Func: (*Cpu).opCode30,
@@ -290,6 +308,12 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 2,
 		Mnemonic: "LD (HL),d8",
 	},
+	0x37: {
+		Func: (*Cpu).opCode37,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "SCF",
+	},
 	0x38: {
 		Func: (*Cpu).opCode38,
 		Cycles: [2]int{12, 8},
@@ -331,6 +355,12 @@ var OPCodesMap = [0x100]OPCode {
 		Cycles: [2]int{8, 0},
 		Length: 2,
 		Mnemonic: "LD A,d8",
+	},
+	0x3F: {
+		Func: (*Cpu).opCode3F,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "CCF",
 	},
 	0x40: {
 		Func: (*Cpu).opCode40,
@@ -655,6 +685,12 @@ var OPCodesMap = [0x100]OPCode {
 		Cycles: [2]int{8, 0},
 		Length: 1,
 		Mnemonic: "LD (HL),L",
+	},
+	0x76: {
+		Func: (*Cpu).opCode76,
+		Cycles: [2]int{4, 0},
+		Length: 1,
+		Mnemonic: "HALT",
 	},
 	0x77: {
 		Func: (*Cpu).opCode77,
@@ -1446,6 +1482,12 @@ func (cpu *Cpu)opCode0E() byte {
 	return 0
 }
 
+// STOP
+func (cpu *Cpu)opCode10() byte {
+	cpu.Halt = true
+	return 0
+}
+
 // LD DE,d16
 func (cpu *Cpu)opCode11() byte {
 	arg := cpu.gb.Mem.ReadUint16(cpu.reg.PC)
@@ -1660,6 +1702,41 @@ func (cpu *Cpu)opCode26() byte {
 	return 0
 }
 
+// DAA
+func (cpu *Cpu)opCode27() byte {
+	res := uint16(cpu.reg.A)
+	if cpu.getFlagN() {
+		//SUB
+		if cpu.getFlagH() {
+			res = (res - 0x6) & 0xFF
+		}
+		if cpu.getFlagC() {
+			res = (res - 0x60) & 0xFF
+		}
+	} else {
+		//ADD
+		if cpu.getFlagH() || res & 0xF > 0x9 {
+			res += 0x6
+		}
+		if cpu.getFlagC() || res > 0x9F {
+			res += 0x60
+		}
+	}
+	cpu.reg.A = byte(res & 0xFF)
+	if cpu.reg.A == 0 {
+		cpu.setFlagZ()
+	} else {
+		cpu.resetFlagZ()
+	}
+	cpu.resetFlagH()
+	if res > 0xFF {
+		cpu.setFlagC()
+	} else {
+		cpu.resetFlagC()
+	}
+	return 0
+}
+
 // JR Z,r8
 func (cpu *Cpu)opCode28() byte {
 	arg := int8(cpu.gb.Mem.Read(cpu.reg.PC))
@@ -1748,6 +1825,14 @@ func (cpu *Cpu)opCode2E() byte {
 	return 0
 }
 
+// CPL
+func (cpu *Cpu)opCode2F() byte {
+	cpu.reg.A = cpu.reg.A ^ 0xFF
+	cpu.setFlagN()
+	cpu.setFlagH()
+	return 0
+}
+
 // JR NC,r8
 func (cpu *Cpu)opCode30() byte {
 	arg := int8(cpu.gb.Mem.Read(cpu.reg.PC))
@@ -1821,6 +1906,14 @@ func (cpu *Cpu)opCode36() byte {
 	arg := cpu.gb.Mem.Read(cpu.reg.PC)
 	cpu.reg.PC++
 	cpu.gb.Mem.Write(cpu.reg.getHL(), arg)
+	return 0
+}
+
+// SCF
+func (cpu *Cpu)opCode37() byte {
+	cpu.resetFlagN()
+	cpu.resetFlagH()
+	cpu.setFlagC()
 	return 0
 }
 
@@ -1909,6 +2002,18 @@ func (cpu *Cpu)opCode3D() byte {
 func (cpu *Cpu)opCode3E() byte {
 	cpu.reg.A = cpu.gb.Mem.Read(cpu.reg.PC)
 	cpu.reg.PC++
+	return 0
+}
+
+// CCF
+func (cpu *Cpu)opCode3F() byte {
+	cpu.resetFlagN()
+	cpu.resetFlagH()
+	if cpu.getFlagC() {
+		cpu.resetFlagC()
+	} else {
+		cpu.setFlagC()
+	}
 	return 0
 }
 
@@ -2233,6 +2338,12 @@ func (cpu *Cpu)opCode74() byte {
 // LD (HL),L
 func (cpu *Cpu)opCode75() byte {
 	cpu.gb.Mem.Write(cpu.reg.getHL(), cpu.reg.L)
+	return 0
+}
+
+// HALT
+func (cpu *Cpu)opCode76() byte {
+	cpu.Halt = true
 	return 0
 }
 

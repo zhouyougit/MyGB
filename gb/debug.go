@@ -37,13 +37,14 @@ var debugFuncMap = map[string]debugFunc {
 	"b" : (* Debuger).debugFuncBreak,
 	"info" : (* Debuger).debugFuncInfo,
 	"delete" : (* Debuger).debugFuncDelete,
-	"cart" : (* Debuger).debugFuncCartridge,
 	"exit" : (* Debuger).debugFuncExit,
 }
 
 var debugFuncInfoMap = map[string]debugFunc {
 	"bp" : (* Debuger).debugFuncInfoBreakpoints,
-	"cpu" : (* Debuger).debugFuncCpu,
+	"cpu" : (* Debuger).debugFuncInfoCpu,
+	"int" : (* Debuger).debugFuncInfoInt,
+	"cart" : (* Debuger).debugFuncInfoCartridge,
 }
 
 var debugFuncDeleteMap = map[string]debugFunc {
@@ -77,7 +78,10 @@ func (d *Debuger) skipStep() bool {
 	return false
 }
 
-func (d *Debuger) DebugStep() {
+func (d *Debuger) DebugOpcode() {
+	if d.gb.Cpu.Halt {
+		return
+	}
 	pc := d.gb.Cpu.reg.PC
 	skipStep := d.skipStep()
 
@@ -89,6 +93,23 @@ func (d *Debuger) DebugStep() {
 		return
 	}
 
+	d.doDebugInteract()
+}
+
+func (d *Debuger) DebugInterrupt(i Interrupt) {
+	skipStep := d.skipStep()
+
+	if d.showStep || !skipStep {
+		fmt.Printf("->$\tPush PC; JP 0x%04X;\t(Interrupted by %s)\n", i.Addr, i.Name)
+	}
+
+	if skipStep {
+		return
+	}
+	d.doDebugInteract()
+}
+
+func (d *Debuger) doDebugInteract() {
 	c := true
 	for c {
 		text := d.p.Input()
@@ -161,8 +182,9 @@ func (d *Debuger) debugFuncHelp(args []string) bool {
 		"break,b\tCreate breakpoint at address. eg. 'break 0x0150'\n" +
 		"info bp\tPrint all breakpoints\n" +
 		"info cpu\tPrint CPU info\n" +
+		"info cart\tPrint Cartridge info\n" +
+		"info int\tPrint Interrupt info\n" +
 		"delete bp\tbp\tDelete breakpoint at address. eg. 'delete bp 0x0150'\n" +
-		"cart\t\tPrint Cartridge info\n" +
 		"exit\t\tExit Program\n\n")
 	return true
 }
@@ -294,7 +316,7 @@ func (d *Debuger) debugFuncDeleteBreakpoint(args []string) bool {
 	return true
 }
 
-func (d *Debuger) debugFuncCpu(args []string) bool {
+func (d *Debuger) debugFuncInfoCpu(args []string) bool {
 	cpu := d.gb.Cpu
 	btoi := func(a bool) int {
 		if a {
@@ -312,7 +334,29 @@ func (d *Debuger) debugFuncCpu(args []string) bool {
 	return true
 }
 
-func (d *Debuger) debugFuncCartridge(args []string) bool {
+func (d *Debuger) debugFuncInfoInt(args []string) bool {
+	enable := d.gb.Mem.Read(IE_ADDR)
+	flag := d.gb.Mem.Read(IF_ADDR)
+
+	fmt.Printf("== Interrupt Info ==\n" +
+		"Name\t\tEnable\tFlag" +
+		"IME\t\t%v\t-\n" +
+		"V-Blank\t\t%t\t%t\n" +
+		"LCD STAT\t%t\t%t\n" +
+		"Timer\t\t%t\t%t\n" +
+		"Serial\t\t%t\t%t\n" +
+		"Joypad\t\t%t\t%t\n" +
+		"\n",
+		d.gb.Cpu.IME,
+		enable & (0x1 <<IntVBlank) > 0, flag & (0x1 <<IntVBlank) > 0,
+		enable & (0x1 <<IntLcdStat) > 0, flag & (0x1 <<IntLcdStat) > 0,
+		enable & (0x1 <<IntTimer) > 0, flag & (0x1 <<IntTimer) > 0,
+		enable & (0x1 <<IntSerial) > 0, flag & (0x1 <<IntSerial) > 0,
+		enable & (0x1 <<IntJoypad) > 0, flag & (0x1 <<IntJoypad) > 0)
+	return true
+}
+
+func (d *Debuger) debugFuncInfoCartridge(args []string) bool {
 	//fmt.Println("next")
 	return true
 }
