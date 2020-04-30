@@ -1,10 +1,9 @@
 package gb
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/c-bata/go-prompt"
-	"os"
-	"strconv"
 	"strings"
 )
 
@@ -18,46 +17,6 @@ type Debuger struct {
 	stepSkipCount int
 }
 
-type debugFunc func(*Debuger, []string) bool
-
-var debugFuncMap = map[string]debugFunc {
-	"help" : (* Debuger).debugFuncHelp,
-	"h" : (* Debuger).debugFuncHelp,
-	"next" : (* Debuger).debugFuncNext,
-	"n" : (* Debuger).debugFuncNext,
-	"list" : (* Debuger).debugFuncList,
-	"l" : (* Debuger).debugFuncList,
-	"print" : (* Debuger).debugFuncPrint,
-	"p" : (* Debuger).debugFuncPrint,
-	"dump" : (* Debuger).debugFuncDump,
-	"d" : (* Debuger).debugFuncDump,
-	"continue" : (* Debuger).debugFuncContinue,
-	"c" : (* Debuger).debugFuncContinue,
-	"break" : (* Debuger).debugFuncBreak,
-	"b" : (* Debuger).debugFuncBreak,
-	"info" : (* Debuger).debugFuncInfo,
-	"delete" : (* Debuger).debugFuncDelete,
-	"set" : (* Debuger).debugFuncSet,
-	"exit" : (* Debuger).debugFuncExit,
-}
-
-var debugFuncInfoMap = map[string]debugFunc {
-	"bp" : (* Debuger).debugFuncInfoBreakpoints,
-	"cpu" : (* Debuger).debugFuncInfoCpu,
-	"int" : (* Debuger).debugFuncInfoInt,
-	"cart" : (* Debuger).debugFuncInfoCartridge,
-	"timer" : (* Debuger).debugFuncInfoTimer,
-	"lcd" : (* Debuger).debugFuncInfoLCD,
-	"cycle" : (* Debuger).debugFuncInfoCycle,
-}
-
-var debugFuncDeleteMap = map[string]debugFunc {
-	"bp" : (* Debuger).debugFuncDeleteBreakpoint,
-}
-
-var debugFuncSetMap = map[string]debugFunc {
-	"step" : (* Debuger).debugFuncSetShowStep,
-}
 
 func NewDebuger(gb *GameBoy) *Debuger {
 	d := &Debuger{
@@ -152,314 +111,181 @@ func (d *Debuger) debugComplate(doc prompt.Document) []prompt.Suggest {
 }
 
 func (d *Debuger) printInstruction(addr uint16, curr bool) {
-	var opCode OPCode
-	argsAddr := addr + 1
+	prefix := "  "
+	if curr {
+		prefix = "->"
+	}
 	opCodeByte := d.gb.Mem.Read(addr)
+	var opCodeByte2 byte
+	var opCode OPCode
+	var argLength = 0
+	argsAddr := addr + 1
+
 	if opCodeByte == 0xCB {
-		opCodeByteCB := d.gb.Mem.Read(addr + 1)
-		opCode = OPCodesMapCB[opCodeByteCB]
+		opCodeByte2 = d.gb.Mem.Read(addr+1)
+		opCode = OPCodesMapCB[opCodeByte2]
 		argsAddr++
 	} else {
 		opCode = OPCodesMap[opCodeByte]
+		argLength = int(opCode.Length - 1)
 	}
 
-	var args = ""
-	for i := uint16(0); i < opCode.Length - 1; i++ {
-		args += fmt.Sprintf("%02X ", d.gb.Mem.Read(argsAddr + i))
-	}
-
-	if curr {
-		fmt.Print("->")
-	} else {
-		fmt.Print("  ")
-	}
-	if opCode.Func != nil {
-		if len(opCode.Mnemonic) < 8 {
-			fmt.Printf("$%04X\t%s\t\t%s\n", addr, opCode.Mnemonic, args)
+	if opCode.Func == nil {
+		if opCodeByte == 0xCB {
+			fmt.Printf("%s$%04X\tUnknown opCode [0x%02X%02X]\n", prefix, addr, opCodeByte, opCodeByte2)
 		} else {
-			fmt.Printf("$%04X\t%s\t%s\n", addr, opCode.Mnemonic, args)
+			fmt.Printf("%s$%04X\tUnknown opCode [0x%02X]\n", prefix, addr, opCodeByte)
 		}
+		return
+	}
+
+	var tab string
+	if len(opCode.Mnemonic) < 8 {
+		tab = "\t\t"
 	} else {
-		fmt.Printf("$%04X\tUnknown opCode [0x%02X]\n", addr, opCodeByte)
+		tab = "\t"
 	}
-}
 
-func (d *Debuger) debugFuncHelp(args []string) bool {
-	fmt.Printf("===== Debuger Help =====\n" +
-		"help,h\tPrint this Doc\n" +
-		"next,n\tNext step\n" +
-		"print,p\tPrint data from Memory address. eg. 'print 0x0100'\n" +
-		"dump,d\tDump data from Memory address range. eg. 'dump 0x0100 0x0110'\n" +
-		"continue,c\tContinue run\n" +
-		"break,b\tCreate breakpoint at address. eg. 'break 0x0150'\n" +
-		"info bp\tPrint all breakpoints\n" +
-		"info cpu\tPrint CPU info\n" +
-		"info cycle\tPrint Main Cycle info\n" +
-		"info cart\tPrint Cartridge info\n" +
-		"info int\tPrint Interrupt info\n" +
-		"info timer\tPrint Timer info\n" +
-		"info lcd\tPrint LCD info\n" +
-		"set step\tSet showStep status.\n" +
-		"delete bp\tbp\tDelete breakpoint at address. eg. 'delete bp 0x0150'\n" +
-		"exit\t\tExit Program\n\n")
-	return true
-}
-
-func (d *Debuger) debugFuncSubCmd(cmdMap map[string]debugFunc, args []string) bool {
-	if len(args) < 1 {
-		return true
-	}
-	subCmd := args[0]
-	args = args[1:]
-
-	df, exists := cmdMap[subCmd]
-	if !exists {
-		fmt.Printf("Unknown Sub Command : %s\n", subCmd)
-		return true
-	}
-	return df(d, args)
-}
-
-func (d *Debuger) debugFuncInfo(args []string) bool {
-	return d.debugFuncSubCmd(debugFuncInfoMap, args)
-}
-
-func (d *Debuger) debugFuncDelete(args []string) bool {
-	return d.debugFuncSubCmd(debugFuncDeleteMap, args)
-}
-
-func (d *Debuger) debugFuncSet(args []string) bool {
-	return d.debugFuncSubCmd(debugFuncSetMap, args)
-}
-
-func (d *Debuger) debugFuncNext(args []string) bool {
-	if len(args) > 0 {
-		var err error
-		d.stepSkipCount, err = strconv.Atoi(args[0])
-		if err != nil {
-			fmt.Println(err)
-			return true
+	var argStr = ""
+	if argLength > 0 {
+		for i := uint16(0); i < uint16(argLength); i++ {
+			argStr += fmt.Sprintf("%02X ", d.gb.Mem.Read(argsAddr + i))
 		}
 	}
-	return false
+
+	var argValue = d.generateOpCodeArgValueString(opCode, argsAddr)
+
+	fmt.Printf("%s$%04X\t%s%s%s%s\n", prefix, addr, opCode.Mnemonic, tab, argStr, argValue)
 }
 
-func (d *Debuger) debugFuncList(args []string) bool {
-	d.printInstruction(d.gb.Cpu.reg.PC, true)
-	return true
-}
+func (d *Debuger) generateOpCodeArgValueString(code OPCode, addr uint16) string {
+	out := bytes.Buffer{}
+	out.WriteString("\t// ")
+	ss := strings.Split(code.Mnemonic, " ")
+	cmd := ss[0]
 
-func (d *Debuger) debugFuncPrint(args []string) bool {
-	if len(args) < 1 {
-		return true
-	}
-	addr, err := strconv.ParseUint(args[0], 0, 16)
-	if err != nil {
-		fmt.Println(err)
-		return true
-	}
-	fmt.Printf("$%04X : ", addr)
-	length := 1
-	if len(args) > 1 {
-		length, _ = strconv.Atoi(args[1])
-	}
-	for i := 0; i < length; i++ {
-		fmt.Printf("%02X ", d.gb.Mem.Read(uint16(addr) + uint16(i)))
-	}
-	fmt.Printf("\n")
-	return true
-}
+	out.WriteString(d.generateOpCodeArgValueByCmd(cmd))
 
-func (d *Debuger) debugFuncDump(args []string) bool {
-	if len(args) != 2 {
-		fmt.Println("Usage: dump [beginAddr] [endAddr]")
-		return true
-	}
-	begin, err := strconv.ParseUint(args[0], 0, 16)
-	if err != nil {
-		fmt.Println(err)
-		return true
-	}
-	end, err := strconv.ParseUint(args[1], 0, 16)
-	if err != nil {
-		fmt.Println(err)
-		return true
-	}
-	d.gb.Mem.Dump(uint16(begin), uint16(end))
-	return true
-}
+	if len(ss) > 1 {
+		argDefs := ss[1]
+		argDefList := strings.Split(argDefs, ",")
 
-func (d *Debuger) debugFuncContinue(args []string) bool {
-	d.step = false
-	return false
-}
-
-func (d *Debuger) debugFuncBreak(args []string) bool {
-	addr := d.gb.Cpu.reg.PC
-	if len(args) > 0 {
-		var err error
-		addr, err = parseUint16(args[0])
-		if err != nil {
-			return true
+		for idx, ad := range argDefList {
+			out.WriteString(d.generateOneOpCodeArgValue(cmd, ad, addr, idx, len(argDefList)))
 		}
 	}
-	d.breakpoints[addr] = true
-	fmt.Printf("Create breakpoint at [0x%04X]\n", addr)
-	return true
+	if out.Len() == 4 {
+		return ""
+	}
+	return out.String()
 }
 
-func (d *Debuger) debugFuncInfoBreakpoints(args []string) bool {
-	fmt.Printf("name\t\taddr\tenabled\n")
-	for addr, enabled := range d.breakpoints {
-		fmt.Printf("breakpoint\t%04X\t%v\n", addr, enabled)
-	}
-	fmt.Println()
-	return true
-}
-func (d *Debuger) debugFuncDeleteBreakpoint(args []string) bool {
-	if len(args) < 1 {
-		fmt.Println("Usage: delete bp [breakpoint addr]")
-		return true
-	}
-	addr, err := parseUint16(args[0])
-	if err != nil {
-		fmt.Println("Usage: delete bp [breakpoint addr]")
-		return true
-	}
-	_, exist := d.breakpoints[addr]
-	if exist {
-		delete(d.breakpoints, addr)
-		fmt.Printf("Delete breakpoint at [0x%04X]\n", addr)
-	} else {
-		fmt.Printf("Breakpoint at [0x%04X] not found\n", addr)
-	}
-	return true
-}
-
-func (d *Debuger) debugFuncInfoCpu(args []string) bool {
-	cpu := d.gb.Cpu
-	btoi := func(a bool) int {
-		if a {
-			return 1
+func (d *Debuger) generateOneOpCodeArgValue(cmd string, ad string, addr uint16, idx int, total int) string {
+	switch ad {
+	case "A":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("A=%02X ", d.gb.Cpu.reg.A)
+		}
+	case "B":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("B=%02X ", d.gb.Cpu.reg.B)
+		}
+	case "C":
+		if idx == 0 {
+			if cmd == "JR" || cmd == "CALL" || cmd == "JP" {
+				return fmt.Sprintf("flagC=%t ", d.gb.Cpu.getFlagC())
+			}
+		} else if total == 1 {
+			return fmt.Sprintf("C=%02X ", d.gb.Cpu.reg.C)
+		}
+	case "D":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("D=%02X ", d.gb.Cpu.reg.D)
+		}
+	case "E":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("E=%02X ", d.gb.Cpu.reg.E)
+		}
+	case "H":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("H=%02X ", d.gb.Cpu.reg.H)
+		}
+	case "L":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("L=%02X ", d.gb.Cpu.reg.L)
+		}
+	case "AF":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("AF=%04X ", d.gb.Cpu.reg.getAF())
+		}
+	case "BC":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("BC=%04X ", d.gb.Cpu.reg.getBC())
+		}
+	case "DE":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("DE=%04X ", d.gb.Cpu.reg.getDE())
+		}
+	case "HL":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("HL=%04X ", d.gb.Cpu.reg.getHL())
+		}
+	case "SP":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("SP=%04X ", d.gb.Cpu.reg.SP)
+		}
+	case "PC":
+		if idx != 0 || total == 1 {
+			return fmt.Sprintf("PC=%04X ", d.gb.Cpu.reg.PC)
+		}
+	case "(a8)":
+		a8 := d.gb.Mem.Read(addr)
+		if idx == 0 {
+			return fmt.Sprintf("0xFF00+a8=0xFF%02X ", a8)
 		} else {
-			return 0
+			return fmt.Sprintf("0xFF00+a8=0xFF%02X (0xFF+a8)=%02X ", a8, d.gb.Mem.Read(0xFF00 + uint16(a8)))
+		}
+	case "(a16)":
+		a16 := d.gb.Mem.ReadUint16(addr)
+		if idx == 0 {
+			return fmt.Sprintf("a16=0x%04X ", a16)
+		} else {
+			return fmt.Sprintf("a16=0x%04X (a16)=%02X ", a16, d.gb.Mem.Read(a16))
+		}
+	case "a16":
+		a16 := d.gb.Mem.ReadUint16(addr)
+		return fmt.Sprintf("a16=0x%04X ", a16)
+	case "d8":
+		d8 := d.gb.Mem.Read(addr)
+		return fmt.Sprintf("d8=%02X ", d8)
+	case "d16":
+		d16 := d.gb.Mem.ReadUint16(addr)
+		return fmt.Sprintf("d16=%04X ", d16)
+	case "Z","NZ":
+		return fmt.Sprintf("flagZ=%t ", d.gb.Cpu.getFlagZ())
+	case "NC":
+		return fmt.Sprintf("flagC=%t ", d.gb.Cpu.getFlagC())
+	case "r8":
+		r8 := int8(d.gb.Mem.Read(addr))
+		if r8 >= 0 {
+			return fmt.Sprintf("r8=0x%02X ", r8)
+		} else {
+			return fmt.Sprintf("r8=-0x%02X ", -r8)
+		}
+	case "(HL)", "(HL-)", "(HL+)":
+		if idx == 0 {
+			return fmt.Sprintf("HL=0x%04X ", d.gb.Cpu.reg.getHL())
+		} else {
+			return fmt.Sprintf("HL=0x%04X (HL)=%02X", d.gb.Cpu.reg.getHL(), d.gb.Mem.Read(d.gb.Cpu.reg.getHL()))
 		}
 	}
-	fmt.Printf("== CPU Info ==\n" +
-		"Reg  : AF=%04X BC=%04X DE=%04X HL=%04X SP=%04X PC=%04X\n" +
-		"Flag : Z=%b N=%b H=%b C=%b IME=%b\n\n",
-		cpu.reg.getAF(), cpu.reg.getBC(), cpu.reg.getDE(), cpu.reg.getHL(), cpu.reg.SP, cpu.reg.PC,
-		btoi(cpu.getFlagZ()), btoi(cpu.getFlagN()), btoi(cpu.getFlagH()),
-		btoi(cpu.getFlagC()), btoi(cpu.getFlagIME()))
-	return true
+	return ""
 }
 
-func (d *Debuger) debugFuncInfoInt(args []string) bool {
-	enable := d.gb.Mem.Read(IE_ADDR)
-	flag := d.gb.Mem.Read(IF_ADDR)
-
-	fmt.Printf("== Interrupt Info ==\n" +
-		"Name\t\tEnable\tFlag\n" +
-		"IME\t\t%v\t-\n" +
-		"V-Blank\t\t%t\t%t\n" +
-		"LCD STAT\t%t\t%t\n" +
-		"Timer\t\t%t\t%t\n" +
-		"Serial\t\t%t\t%t\n" +
-		"Joypad\t\t%t\t%t\n" +
-		"\n",
-		d.gb.Cpu.IME,
-		enable & IntVBlank.Mask > 0, flag & IntVBlank.Mask > 0,
-		enable & IntLcdStat.Mask > 0, flag & IntLcdStat.Mask > 0,
-		enable & IntTimer.Mask > 0, flag & IntTimer.Mask > 0,
-		enable & IntSerial.Mask > 0, flag & IntSerial.Mask > 0,
-		enable & IntJoypad.Mask > 0, flag & IntJoypad.Mask > 0)
-	return true
-}
-
-func (d *Debuger) debugFuncInfoCartridge(args []string) bool {
-	//fmt.Println("next")
-	return true
-}
-
-func (d *Debuger) debugFuncInfoCycle(args []string) bool {
-	fmt.Printf("Main Cycles : %d/%d\n", d.gb.currCycles, d.gb.cyclesInFrame)
-	return true
-}
-
-func (d *Debuger) debugFuncInfoLCD(args []string) bool {
-	l := d.gb.Lcd
-	fmt.Printf("== LCD Info ==\n" +
-		"LCD Display Enabled\t: %t\n" +
-		"LCD Cycles\t\t: %d/%d\n",
-		l.isLCDDisplayEnabled(), l.scanLineCounter, LCD_FULL_CYCLES)
-	ly := d.gb.Mem.Read(LCD_LY_ADDR)
-	lyc := d.gb.Mem.Read(LCD_LYC_ADDR)
-	fmt.Printf("Scan Line (LY)\t\t: %d (LYC=%d)\n", ly, lyc)
-
-	stat := d.gb.Mem.Read(LCD_STAT_ADDR)
-
-	mode := stat & 0b11
-	switch mode {
-	case 0:
-		fmt.Printf("LCD Mode\t\t: 0 (H-Blank)\n")
-	case 1:
-		fmt.Printf("LCD Mode\t\t: 1 (V-Blank)\n")
-	case 2:
-		fmt.Printf("LCD Mode\t\t: 2 (Searching OAM)\n")
-	case 3:
-		fmt.Printf("LCD Mode\t\t: 3 (Transfering Data)\n")
+func (d *Debuger) generateOpCodeArgValueByCmd(cmd string) string {
+	switch cmd {
+	case "CP":
+		return fmt.Sprintf("A=%02X ", d.gb.Cpu.reg.A)
 	}
-
-	fmt.Printf("Int Enabled\t\t: Mode0=%t Mode1=%t Mode2=%t LYC=%t\n",
-		stat & 0b1000 == 0b1000, stat & 0b10000 == 0b10000,
-		stat & 0b100000 == 0b100000, stat & 0b1000000 == 0b1000000)
-
-	fmt.Println("")
-
-	return true
-}
-
-func (d *Debuger) debugFuncInfoTimer(args []string) bool {
-	t := d.gb.Timer
-	fmt.Printf("== Timer Info ==\n")
-	tima := d.gb.Mem.Read(TIMER_TIMA_ADDR)
-	tma := d.gb.Mem.Read(TIMER_TMA_ADDR)
-	div := d.gb.Mem.Read(TIMER_DIV_ADDR)
-
-	fmt.Printf("Started\t\t: %t\n" +
-		"Freq\t\t: %d\n" +
-		"TIMA Cycles\t: %d/%d\n" +
-		"TIMA/TMA\t: %02X/%02X\n" +
-		"DIV Cycles\t: %d/%d\n" +
-		"DIV\t\t: %02X\n\n",
-		t.isTimerStarted(),
-		t.getTimerFreq(),
-		t.cyclesCounter, d.gb.Cpu.frequency / t.getTimerFreq(),
-		tima, tma,
-		t.dividerCounter, t.dividerMax,
-		div)
-	return true
-}
-
-func (d *Debuger) debugFuncExit(args []string) bool {
-	os.Exit(0)
-	return false
-}
-
-func (d *Debuger) debugFuncSetShowStep(args []string) bool {
-	if len(args) < 1 {
-		fmt.Printf("Usage : set step [true|false].\n")
-	}
-	d.showStep, _ = strconv.ParseBool(args[0])
-	fmt.Printf("Show Step : %v\n", d.showStep)
-	return true
-}
-
-func parseUint16(text string) (uint16, error) {
-	val, err := strconv.ParseUint(text, 0, 16)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-	return uint16(val), nil
+	return ""
 }

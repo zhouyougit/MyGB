@@ -214,13 +214,8 @@ func (cpu *Cpu) executeNextOpcode() int {
 	var opCode OPCode
 	opCodeByte := cpu.gb.Mem.Read(cpu.reg.PC)
 	cpu.reg.PC++
-	if opCodeByte == 0xCB {
-		opCodeByteCB := cpu.gb.Mem.Read(cpu.reg.PC)
-		cpu.reg.PC++
-		opCode = OPCodesMapCB[opCodeByteCB]
-	} else {
-		opCode = OPCodesMap[opCodeByte]
-	}
+	opCode = OPCodesMap[opCodeByte]
+
 	if opCode.Func == nil {
 		os.Exit(0)
 		return 0
