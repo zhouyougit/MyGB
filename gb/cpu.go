@@ -225,6 +225,7 @@ func (cpu *Cpu) executeNextOpcode() int {
 }
 
 func (cpu *Cpu) RequestInterrupt(req Interrupt) {
+	//fmt.Printf("request int %s\n%s\n", req.Name, debug.Stack())
 	flag := cpu.gb.Mem.Read(IF_ADDR)
 	flag |= req.Mask
 	cpu.gb.Mem.Write(IF_ADDR, flag)
@@ -245,7 +246,7 @@ func (cpu *Cpu) checkInterrupt() int {
 		return 0
 	}
 
-	for _, i := range []Interrupt{} {
+	for _, i := range []Interrupt{IntVBlank, IntLcdStat, IntTimer, IntSerial, IntJoypad} {
 		if enabled & flag & i.Mask == 0 {
 			continue
 		}

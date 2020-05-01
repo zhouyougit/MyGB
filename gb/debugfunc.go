@@ -37,6 +37,7 @@ var debugFuncInfoMap = map[string]debugFunc {
 	"timer" : (* Debuger).debugFuncInfoTimer,
 	"lcd" : (* Debuger).debugFuncInfoLCD,
 	"cycle" : (* Debuger).debugFuncInfoCycle,
+	"joypad" : (* Debuger).debugFuncInfoJoypad,
 }
 
 var debugFuncDeleteMap = map[string]debugFunc {
@@ -62,6 +63,7 @@ func (d *Debuger) debugFuncHelp(args []string) bool {
 		"info int\tPrint Interrupt info\n" +
 		"info timer\tPrint Timer info\n" +
 		"info lcd\tPrint LCD info\n" +
+		"info joypad\tPrint LCD info\n" +
 		"set step\tSet showStep status.\n" +
 		"delete bp\tbp\tDelete breakpoint at address. eg. 'delete bp 0x0150'\n" +
 		"exit\t\tExit Program\n\n")
@@ -210,10 +212,12 @@ func (d *Debuger) debugFuncInfoCpu(args []string) bool {
 	}
 	fmt.Printf("== CPU Info ==\n" +
 		"Reg  : AF=%04X BC=%04X DE=%04X HL=%04X SP=%04X PC=%04X\n" +
-		"Flag : Z=%b N=%b H=%b C=%b IME=%b\n\n",
+		"Flag : Z=%b N=%b H=%b C=%b IME=%b\n" +
+		"Halt : %v\n\n",
 		cpu.reg.getAF(), cpu.reg.getBC(), cpu.reg.getDE(), cpu.reg.getHL(), cpu.reg.SP, cpu.reg.PC,
 		btoi(cpu.getFlagZ()), btoi(cpu.getFlagN()), btoi(cpu.getFlagH()),
-		btoi(cpu.getFlagC()), btoi(cpu.getFlagIME()))
+		btoi(cpu.getFlagC()), btoi(cpu.getFlagIME()),
+		cpu.Halt)
 	return true
 }
 
@@ -301,6 +305,33 @@ func (d *Debuger) debugFuncInfoTimer(args []string) bool {
 		tima, tma,
 		t.dividerCounter, t.dividerMax,
 		div)
+	return true
+}
+
+func (d *Debuger) debugFuncInfoJoypad(args []string) bool {
+	j := d.gb.Joypad
+	testBtn := func(btn byte) string {
+		if j.status & (0x1 << btn) == 0 {
+			return "Pressed"
+		} else {
+			return "Released"
+		}
+	}
+	selectBtn := "Direction"
+	if j.selectButton {
+		selectBtn = "Button"
+	}
+	fmt.Printf("== Joypad Info ==\n" +
+		"Select %s\n" +
+		"ButtonRight is %s\tButtonLeft is %s\n" +
+		"ButtonUp is %s\tButtonDown is %s\n" +
+		"ButtonA is %s\tButtonB is %s\n" +
+		"ButtonSelect is %s\tButtonStart is %s\n",
+		selectBtn,
+		testBtn(ButtonRight), testBtn(ButtonLeft),
+		testBtn(ButtonUp), testBtn(ButtonDown),
+		testBtn(ButtonA), testBtn(ButtonB),
+		testBtn(ButtonSelect), testBtn(ButtonStart))
 	return true
 }
 

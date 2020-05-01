@@ -22,6 +22,7 @@ type GameBoy struct {
 	Mem Memory
 	Timer Timer
 	Lcd Lcd
+	Joypad Joypad
 
 	//Video
 	//Sound
@@ -75,13 +76,15 @@ func (gb *GameBoy) init() error {
 	if err != nil {
 		return err
 	}
-	gb.Mem.Init(&gb.Cartridge)
+	gb.Mem.Init(gb)
 	//gb.Mem.Dump(0x0185, 0x0187)
 	gb.Cpu.Init(gb)
 
 	gb.Timer.Init(gb)
 
 	gb.Lcd.Init(gb)
+
+	gb.Joypad.Init(gb)
 
 	if gb.debug {
 		gb.Debuger = NewDebuger(gb)

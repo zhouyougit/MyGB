@@ -153,6 +153,12 @@ var OPCodesMap = [0x100]OPCode {
 		Length: 1,
 		Mnemonic: "RLA",
 	},
+	0x18: {
+		Func: (*Cpu).opCode18,
+		Cycles: []int{12, 0},
+		Length: 2,
+		Mnemonic: "JR r8",
+	},
 	0x19: {
 		Func: (*Cpu).opCode19,
 		Cycles: []int{8, 0},
@@ -481,7 +487,7 @@ var OPCodesMap = [0x100]OPCode {
 		Func: (*Cpu).opCode4F,
 		Cycles: []int{4, 0},
 		Length: 1,
-		Mnemonic: "LD B,A",
+		Mnemonic: "LD C,A",
 	},
 	0x50: {
 		Func: (*Cpu).opCode50,
@@ -1375,7 +1381,7 @@ var OPCodesMap = [0x100]OPCode {
 		Func: (*Cpu).opCodeE9,
 		Cycles: []int{4, 0},
 		Length: 3,
-		Mnemonic: "JP (HL)",
+		Mnemonic: "JP HL",
 	},
 	0xEA: {
 		Func: (*Cpu).opCodeEA,
@@ -1736,6 +1742,14 @@ func (cpu *Cpu)opCode17() byte {
 	if carry == 0x01 {
 		cpu.setFlagC()
 	}
+	return 0
+}
+
+// JR r8
+func (cpu *Cpu)opCode18() byte {
+	arg := int8(cpu.gb.Mem.Read(cpu.reg.PC))
+	cpu.reg.PC++
+	cpu.reg.PC = uint16(int32(cpu.reg.PC) + int32(arg))
 	return 0
 }
 
@@ -3731,6 +3745,7 @@ func (cpu *Cpu)opCodeC3() byte {
 func (cpu *Cpu)opCodeC4() byte {
 	if !cpu.getFlagZ() {
 		addr := cpu.gb.Mem.ReadUint16(cpu.reg.PC)
+		cpu.reg.PC += 2
 		cpu.reg.SP -= 2
 		cpu.gb.Mem.WriteUint16(cpu.reg.SP, cpu.reg.PC)
 		cpu.reg.PC = addr
@@ -3815,6 +3830,7 @@ func (cpu *Cpu)opCodeCB() byte {
 func (cpu *Cpu)opCodeCC() byte {
 	if cpu.getFlagZ() {
 		addr := cpu.gb.Mem.ReadUint16(cpu.reg.PC)
+		cpu.reg.PC += 2
 		cpu.reg.SP -= 2
 		cpu.gb.Mem.WriteUint16(cpu.reg.SP, cpu.reg.PC)
 		cpu.reg.PC = addr
@@ -3897,6 +3913,7 @@ func (cpu *Cpu)opCodeD2() byte {
 func (cpu *Cpu)opCodeD4() byte {
 	if !cpu.getFlagC() {
 		addr := cpu.gb.Mem.ReadUint16(cpu.reg.PC)
+		cpu.reg.PC += 2
 		cpu.reg.SP -= 2
 		cpu.gb.Mem.WriteUint16(cpu.reg.SP, cpu.reg.PC)
 		cpu.reg.PC = addr
@@ -3975,6 +3992,7 @@ func (cpu *Cpu)opCodeDA() byte {
 func (cpu *Cpu)opCodeDC() byte {
 	if cpu.getFlagC() {
 		addr := cpu.gb.Mem.ReadUint16(cpu.reg.PC)
+		cpu.reg.PC += 2
 		cpu.reg.SP -= 2
 		cpu.gb.Mem.WriteUint16(cpu.reg.SP, cpu.reg.PC)
 		cpu.reg.PC = addr
@@ -4085,9 +4103,9 @@ func (cpu *Cpu)opCodeE8() byte {
 	return 0
 }
 
-// JP (HL)
+// JP HL
 func (cpu *Cpu)opCodeE9() byte {
-	cpu.reg.PC = cpu.gb.Mem.ReadUint16(cpu.reg.getHL())
+	cpu.reg.PC = cpu.reg.getHL()
 	return 0
 }
 

@@ -63,6 +63,7 @@ func (l *Lcd) update(cycles int) {
 
 	l.scanLineCounter += cycles
 	if l.scanLineCounter < LCD_FULL_CYCLES {
+		l.updateLCDStatusRegister()
 		return
 	}
 	l.scanLineCounter -= LCD_FULL_CYCLES

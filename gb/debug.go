@@ -65,6 +65,9 @@ func (d *Debuger) DebugOpcode() {
 
 func (d *Debuger) SetStep() {
 	d.step = true
+	if d.gb.Cpu.Halt {
+		d.doDebugInteract()
+	}
 }
 
 func (d *Debuger) DebugInterrupt(i Interrupt) {
@@ -77,7 +80,7 @@ func (d *Debuger) DebugInterrupt(i Interrupt) {
 	if skipStep {
 		return
 	}
-	d.doDebugInteract()
+	//d.doDebugInteract()
 }
 
 func (d *Debuger) doDebugInteract() {
@@ -86,6 +89,9 @@ func (d *Debuger) doDebugInteract() {
 		text := d.p.Input()
 		if len(text) == 0 {
 			text = d.lastCmd
+		}
+		if len(text) == 0 {
+			continue
 		}
 		args := strings.Split(text, " ")
 		cmd := args[0]
@@ -132,9 +138,9 @@ func (d *Debuger) printInstruction(addr uint16, curr bool) {
 
 	if opCode.Func == nil {
 		if opCodeByte == 0xCB {
-			fmt.Printf("%s$%04X\tUnknown opCode [0x%02X%02X]\n", prefix, addr, opCodeByte, opCodeByte2)
+			fmt.Printf("%s$0x%04X\tUnknown opCode [0x%02X%02X]\n", prefix, addr, opCodeByte, opCodeByte2)
 		} else {
-			fmt.Printf("%s$%04X\tUnknown opCode [0x%02X]\n", prefix, addr, opCodeByte)
+			fmt.Printf("%s$0x%04X\tUnknown opCode [0x%02X]\n", prefix, addr, opCodeByte)
 		}
 		return
 	}
@@ -155,7 +161,7 @@ func (d *Debuger) printInstruction(addr uint16, curr bool) {
 
 	var argValue = d.generateOpCodeArgValueString(opCode, argsAddr)
 
-	fmt.Printf("%s$%04X\t%s%s%s%s\n", prefix, addr, opCode.Mnemonic, tab, argStr, argValue)
+	fmt.Printf("%s$0x%04X\t%s%s%s%s\n", prefix, addr, opCode.Mnemonic, tab, argStr, argValue)
 }
 
 func (d *Debuger) generateOpCodeArgValueString(code OPCode, addr uint16) string {

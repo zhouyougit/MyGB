@@ -19,6 +19,7 @@ General Memory Map
  */
 
 type Memory struct {
+	gb *GameBoy
 	raw [0x10000]byte
 	cartridge *Cartridge
 }
@@ -56,8 +57,10 @@ type Memory struct {
 [$FF4B] = $00   ; WX
 [$FFFF] = $00   ; IE
  */
-func (mem *Memory) Init(cartridge *Cartridge) {
-	mem.cartridge = cartridge
+func (mem *Memory) Init(gb *GameBoy) {
+	mem.gb = gb
+	mem.cartridge = &gb.Cartridge
+
 	mem.raw[0xFF05] = 0x00
 	mem.raw[0xFF06] = 0x00
 	mem.raw[0xFF07] = 0x00
@@ -100,6 +103,8 @@ func (mem *Memory) Read(address uint16) byte {
 		return mem.cartridge.MBC.Read(address)
 	} else if (address >= 0xA000) && (address < 0xC000) {
 		return mem.cartridge.MBC.Read(address)
+	} else if address == 0xFF00 {
+		return mem.gb.Joypad.readStatus()
 	}
 	return mem.raw[address]
 }
@@ -119,6 +124,8 @@ func (mem *Memory) Write(address uint16, data byte) {
 		// Echo of 8kB Internal RAM
 		mem.raw[address] = data
 		mem.raw[address - 0x2000] = data
+	} else if address == 0xFF00 {
+		mem.gb.Joypad.writeStatus(data)
 	} else if address == 0xFF04 {
 		//FF04 - DIV - Divider Register (R/W)
 		mem.raw[address] = 0x00
