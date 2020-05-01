@@ -132,6 +132,9 @@ func (mem *Memory) Write(address uint16, data byte) {
 	} else if address == 0xFF44 {
 		//FF44 - LY - LCDC Y-Coordinate (R)
 		mem.raw[address] = 0x00
+	} else if address == 0xFF46 {
+		//FF46 - DMA - DMA Transfer and Start Address (W)
+		mem.doDMA(data)
 	}
 	mem.raw[address] = data
 }
@@ -154,4 +157,11 @@ func (mem *Memory) Dump(begin, end uint16) {
 		fmt.Printf("%02X ", mem.Read(i))
 	}
 	fmt.Printf("\n\n")
+}
+
+func (mem *Memory) doDMA(data byte) {
+	saddr := uint16(data) << 8
+	for i := uint16(0); i < 0xA0; i++ {
+		mem.Write(0xFE00 + i, mem.Read(saddr + i))
+	}
 }
