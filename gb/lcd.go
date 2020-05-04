@@ -248,6 +248,7 @@ func (l *Lcd) randerBg() {
 		loData := m.Read(tileDataAddr + tileLine * 2)
 		hiData := m.Read(tileDataAddr + tileLine * 2 + 1)
 
+		colorMap := l.getMonochromeColorMap(LCD_BGP_ADDR)
 		for bitPos := int16(7 - curX % 8); bitPos >= 0 && px < 160; bitPos--{
 
 			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
@@ -256,9 +257,7 @@ func (l *Lcd) randerBg() {
 			colorNum = colorNum << 1
 			colorNum = colorNum | ((loData >> bitPos) & 0x01)
 
-			r, g, b := l.getMonochromeColor(colorNum, LCD_BGP_ADDR)
-
-			l.screen[px][ly] = [3]byte{r,g,b}
+			l.screen[px][ly] = colorMap[colorNum]
 			px++
 		}
 		px--
@@ -320,6 +319,7 @@ func (l *Lcd) randerWin() {
 		loData := m.Read(tileDataAddr + tileLine * 2)
 		hiData := m.Read(tileDataAddr + tileLine * 2 + 1)
 
+		colorMap := l.getMonochromeColorMap(LCD_BGP_ADDR)
 		for bitPos := int16(7 - curX % 8); bitPos >= 0 && px < 160; bitPos--{
 
 			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
@@ -328,9 +328,7 @@ func (l *Lcd) randerWin() {
 			colorNum = colorNum << 1
 			colorNum = colorNum | ((loData >> bitPos) & 0x01)
 
-			r, g, b := l.getMonochromeColor(colorNum, LCD_BGP_ADDR)
-
-			l.screen[px][ly] = [3]byte{r,g,b}
+			l.screen[px][ly] = colorMap[colorNum]
 			px++
 		}
 		px--
@@ -341,25 +339,28 @@ func (l *Lcd) randerSprites() {
 
 }
 
-func (l *Lcd) getMonochromeColor(num byte, addr uint16) (r byte, g byte, b byte) {
+func (l *Lcd) getMonochromeColorMap(addr uint16) map[byte][3]byte {
 	palettes := l.gb.Mem.Read(addr)
 
-	color := (palettes >> (num * 2)) & 0x03
+	colorMap := map[byte][3]byte{}
 
-	switch color {
-	case 0:
-		//White
-		return 0xFF, 0xFF, 0xFF
-	case 1:
-		//Light gray
-		return 0xCC, 0xCC, 0xCC
-	case 2:
-		//Dark gray
-		return 0x77, 0x77, 0x77
-	case 3:
-		//Dark
-		return 0x00, 0x00, 0x00
-	default:
-		return 0xFF, 0xFF, 0xFF
+	for num := 0; num < 4; num++ {
+		color := (palettes >> (num * 2)) & 0x03
+
+		switch color {
+		case 0:
+			//White
+			colorMap[0] = [3]byte{0xFF, 0xFF, 0xFF}
+		case 1:
+			//Light gray
+			colorMap[1] = [3]byte{0xCC, 0xCC, 0xCC}
+		case 2:
+			//Dark gray
+			colorMap[2] = [3]byte{0x77, 0x77, 0x77}
+		case 3:
+			//Dark
+			colorMap[3] = [3]byte{0x00, 0x00, 0x00}
+		}
 	}
+	return colorMap
 }
