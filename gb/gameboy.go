@@ -23,6 +23,7 @@ type GameBoy struct {
 	Timer Timer
 	Lcd Lcd
 	Joypad Joypad
+	Monitor Monitor
 
 	//Video
 	//Sound
@@ -38,15 +39,17 @@ type GameBoy struct {
 	finish sync.WaitGroup
 }
 
-func NewGameBoy(args *GameBoyArgs) (*GameBoy, error) {
-	gb := &GameBoy{}
-
-	gb.debug = args.Debug
-	gb.fps = args.FPS
-	gb.Cartridge.romPath = args.ROMPath
-	gb.Cpu.frequency = CPU_MAIN_FREQUENCY
-	gb.cyclesInFrame = gb.Cpu.frequency / gb.fps
-	gb.currCycles = 0
+func NewGameBoy(args *GameBoyArgs, monitor Monitor) (*GameBoy, error) {
+	gb := &GameBoy{
+		Cartridge: Cartridge{
+			romPath: args.ROMPath,
+		},
+		Monitor: monitor,
+		debug: args.Debug,
+		fps: args.FPS,
+		cyclesInFrame: CPU_MAIN_FREQUENCY / args.FPS,
+		currCycles: 0,
+	}
 
 	gb.init()
 	return gb, nil
@@ -84,6 +87,8 @@ func (gb *GameBoy) init() error {
 
 	gb.Lcd.Init(gb)
 
+	gb.Monitor.Init(&gb.Lcd.screen, gb.Cartridge.Header.Title)
+
 	gb.Joypad.Init(gb)
 
 	if gb.debug {
@@ -105,4 +110,5 @@ func (gb *GameBoy) updateFrame() {
 		gb.Lcd.update(cycles)
 	}
 	gb.currCycles -= gb.cyclesInFrame
+	gb.Monitor.RenderScreen()
 }

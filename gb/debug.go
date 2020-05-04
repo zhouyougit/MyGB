@@ -29,6 +29,9 @@ func NewDebuger(gb *GameBoy) *Debuger {
 	return d
 }
 
+func (d *Debuger)Stop() {
+}
+
 func (d *Debuger) skipStep() bool {
 	if !d.step {
 		bp, exist := d.breakpoints[d.gb.Cpu.reg.PC]

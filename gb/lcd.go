@@ -44,10 +44,34 @@ const (
 	LCD_FULL_CYCLES int = 456
 )
 
+var (
+	/**
+	FF40 - LCDC - LCD Control (R/W)
+	  Bit 7 - LCD Display Enable             (0=Off, 1=On)
+	  Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+	  Bit 5 - Window Display Enable          (0=Off, 1=On)
+	  Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+	  Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+	  Bit 2 - OBJ (Sprite) Size              (0=8x8, 1=8x16)
+	  Bit 1 - OBJ (Sprite) Display Enable    (0=Off, 1=On)
+	  Bit 0 - BG Display (for CGB see below) (0=Off, 1=On)
+	 */
+	LcdCtrlLCDEnable byte = 0x1 << 7
+	LcdCtrlWinTileMapSelect byte = 0x1 << 6
+	LcdCtrlWinEnable byte = 0x1 << 5
+	LcdCtrlTileDataSelect byte = 0x1 << 4
+	LcdCtrlBgTileMapSelect byte = 0x1 << 3
+	LcdCtrlObjSize byte = 0x1 << 2
+	LcdCtrlObjEnable byte = 0x1 << 1
+	LcdCtrlBgEnable byte = 0x1 << 0
+)
+
 type Lcd struct {
 	gb *GameBoy
 
 	scanLineCounter int
+
+	screen [160][144][3] uint8
 }
 
 func (l *Lcd) Init(gb *GameBoy) error {
@@ -160,5 +184,106 @@ func (l *Lcd) isLCDDisplayEnabled() bool {
 }
 
 func (l *Lcd) drawScanLine() {
+	ctrl := l.gb.Mem.Read(LCD_CTRL_ADDR)
 
+	if ctrl & LcdCtrlBgEnable > 0 {
+		l.randerTiles()
+	}
+
+	if ctrl & LcdCtrlObjEnable > 0 {
+		l.randerSprites()
+	}
+}
+
+func (l *Lcd) randerTiles() {
+	m := l.gb.Mem
+	ctrl := m.Read(LCD_CTRL_ADDR)
+
+	scx := m.Read(LCD_SCX_ADDR)
+	scy := m.Read(LCD_SCY_ADDR)
+
+	//Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+	var bgMapBaseAddr uint16 = 0x9800
+	if ctrl & LcdCtrlBgTileMapSelect > 0 {
+		bgMapBaseAddr = 0x9C00
+	}
+
+	//Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+	var tileDataBaseAddr uint16 = 0x8800
+	tileDataSign := true
+	if ctrl & LcdCtrlTileDataSelect > 0 {
+		tileDataBaseAddr = 0x8000
+		tileDataSign = false
+	}
+
+	ly := m.Read(LCD_LY_ADDR)
+	curY := uint16(scy) + uint16(ly)
+
+	//Each tile is sized 8x8 pixels
+	tileRow := curY / 8
+
+	for px := uint16(0); px < 160; px++ {
+		curX := uint16(scx) + px
+
+		//Each tile is sized 8x8 pixels
+		tileCol := curX / 8
+
+		//The gameboy contains two 32x32 tile background maps in VRAM at addresses 9800h-9BFFh and 9C00h-9FFFh
+		tileNo := m.Read(bgMapBaseAddr + tileRow * 32 + tileCol)
+
+		var tileDataAddr uint16
+		if tileDataSign {
+			//patterns have signed numbers from -128 to 127 (i.e. pattern #0 lies at address $9000)
+			tileDataAddr = tileDataBaseAddr + uint16(int16(int8(tileNo)) + 128) * 16
+		} else {
+			tileDataAddr = tileDataBaseAddr + uint16(tileNo) * 16
+		}
+
+		tileLine := curY % 8
+
+		loData := m.Read(tileDataAddr + tileLine)
+		hiData := m.Read(tileDataAddr + tileLine + 1)
+
+		for bitPos := int16(7 - curX % 8); bitPos >= 0 && px < 160; bitPos--{
+
+			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
+			//and the second byte defines the upper bits of the color numbers.
+			colorNum := (hiData >> bitPos) & 0x01
+			colorNum = colorNum << 1
+			colorNum = colorNum | ((loData >> bitPos) & 0x01)
+
+			r, g, b := l.getMonochromeColor(colorNum, LCD_BGP_ADDR)
+
+			l.screen[px][ly] = [3]byte{r,g,b}
+			px++
+		}
+		px--
+	}
+}
+
+func (l *Lcd) randerSprites() {
+
+}
+
+func (l *Lcd) getMonochromeColor(num byte, addr uint16) (r byte, g byte, b byte) {
+	palettes := l.gb.Mem.Read(addr)
+
+	color := (palettes >> (num * 2)) & 0x03
+
+	switch color {
+	case 0:
+		//White
+		return 0xFF, 0xFF, 0xFF
+	case 1:
+		//Light gray
+		return 0xCC, 0xCC, 0xCC
+	case 2:
+		//Dark gray
+		return 0x77, 0x77, 0x77
+	case 3:
+		//Dark
+		return 0x00, 0x00, 0x00
+	default:
+		return 0xFF, 0xFF, 0xFF
+	}
 }

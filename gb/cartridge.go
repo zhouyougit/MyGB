@@ -9,8 +9,8 @@ import (
 
 type Cartridge struct {
 	romPath string
-	header CartridgeHeader
-	MBC MemoryBankController
+	Header  CartridgeHeader
+	MBC     MemoryBankController
 }
 
 type CartridgeHeader struct {
@@ -132,13 +132,13 @@ func (c *Cartridge) LoadRom() error {
 		}
 	}
 
-	c.header.loadHeaders(rom[:0x014F+1])
-	c.header.dumpHeaders()
+	c.Header.loadHeaders(rom[:0x014F+1])
+	c.Header.dumpHeaders()
 
 	if ram == nil {
-		ram = make([]byte, uint32(RAMBankSize) * ramSizeBankMap[c.header.RAMSize])
+		ram = make([]byte, uint32(RAMBankSize) * ramSizeBankMap[c.Header.RAMSize])
 	}
-	switch c.header.CartridgeType {
+	switch c.Header.CartridgeType {
 	case 0x00, 0x08, 0x09:
 		c.MBC = &MBCRom{
 			rom: rom,
@@ -156,11 +156,11 @@ func (c *Cartridge) LoadRom() error {
 }
 
 func (c *Cartridge) isCGB() bool {
-	return c.header.CGBFlag & 0x80 > 0
+	return c.Header.CGBFlag & 0x80 > 0
 }
 
 func (c *Cartridge) isSGB() bool {
-	return c.header.SGBFlag == 0x03
+	return c.Header.SGBFlag == 0x03
 }
 
 func (h *CartridgeHeader) loadHeaders(rawHeader []byte) {

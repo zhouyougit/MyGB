@@ -21,28 +21,36 @@ var (
 		Run: 		func(cmd *cobra.Command, args []string) {
 			gameBoyArgs.ROMPath = args[0]
 
-			gameBoy, err := gb.NewGameBoy(&gameBoyArgs)
+			monitor := &gb.FyneMonitor{}
+			gameBoy, err := gb.NewGameBoy(&gameBoyArgs, monitor)
 			if err != nil {
 				fmt.Errorf("failed to Run GameBoy Game [%s] :%v", gameBoyArgs.ROMPath, err)
 				return
 			}
+
 			//os.Exit(0)
 			stop := make(chan struct{})
 			go gameBoy.Run(stop)
 
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-			for {
-				sigIn := <- sigs
-				if sigIn == syscall.SIGINT {
-					gameBoy.Debuger.SetStep()
-				} else if sigIn == syscall.SIGTERM {
-					break
+			go func() {
+				sigs := make(chan os.Signal, 1)
+				signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+				for {
+					sigIn := <- sigs
+					if sigIn == syscall.SIGINT {
+						gameBoy.Debuger.SetStep()
+					} else if sigIn == syscall.SIGTERM {
+						break
+					}
 				}
-			}
-			close(stop)
+				close(stop)
+			}()
 
-			gameBoy.WaitFinish()
+			monitor.AddExitListener(func() {
+				close(stop)
+			})
+			monitor.AddExitListener(gameBoy.WaitFinish)
+			gameBoy.Monitor.Run(stop)
 		},
 	}
 )

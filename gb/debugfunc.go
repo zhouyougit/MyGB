@@ -26,6 +26,7 @@ var debugFuncMap = map[string]debugFunc {
 	"info" : (* Debuger).debugFuncInfo,
 	"delete" : (* Debuger).debugFuncDelete,
 	"set" : (* Debuger).debugFuncSet,
+	"render" : (* Debuger).debugFuncRender,
 	"exit" : (* Debuger).debugFuncExit,
 }
 
@@ -346,6 +347,11 @@ func (d *Debuger) debugFuncSetShowStep(args []string) bool {
 	}
 	d.showStep, _ = strconv.ParseBool(args[0])
 	fmt.Printf("Show Step : %v\n", d.showStep)
+	return true
+}
+
+func (d *Debuger) debugFuncRender(args []string) bool {
+	d.gb.Monitor.RenderScreen()
 	return true
 }
 

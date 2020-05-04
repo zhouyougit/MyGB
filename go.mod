@@ -3,6 +3,7 @@ module github.com/zhouyougit/MyGB
 go 1.13
 
 require (
+	fyne.io/fyne v1.2.4
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
