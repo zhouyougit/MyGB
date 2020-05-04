@@ -36,9 +36,9 @@ var debugFuncInfoMap = map[string]debugFunc {
 	"int" : (* Debuger).debugFuncInfoInt,
 	"cart" : (* Debuger).debugFuncInfoCartridge,
 	"timer" : (* Debuger).debugFuncInfoTimer,
-	"lcd" : (* Debuger).debugFuncInfoLCD,
 	"cycle" : (* Debuger).debugFuncInfoCycle,
 	"joypad" : (* Debuger).debugFuncInfoJoypad,
+	"lcd" : (* Debuger).debugFuncInfoLcd,
 }
 
 var debugFuncDeleteMap = map[string]debugFunc {
@@ -47,6 +47,14 @@ var debugFuncDeleteMap = map[string]debugFunc {
 
 var debugFuncSetMap = map[string]debugFunc {
 	"step" : (* Debuger).debugFuncSetShowStep,
+}
+
+var debugFuncInfoLcdMap = map[string]debugFunc {
+	"stat" : (* Debuger).debugFuncInfoLcdStat,
+	"ctrl" : (* Debuger).debugFuncInfoLcdCtrl,
+	"pal" : (* Debuger).debugFuncInfoLcdPal,
+	"tileMap" : (* Debuger).debugFuncInfoLcdTileMap,
+	"tileImg" : (* Debuger).debugFuncInfoLcdTileImg,
 }
 
 func (d *Debuger) debugFuncHelp(args []string) bool {
@@ -63,8 +71,12 @@ func (d *Debuger) debugFuncHelp(args []string) bool {
 		"info cart\tPrint Cartridge info\n" +
 		"info int\tPrint Interrupt info\n" +
 		"info timer\tPrint Timer info\n" +
-		"info lcd\tPrint LCD info\n" +
-		"info joypad\tPrint LCD info\n" +
+		"info lcd stat\tPrint LCD stat\n" +
+		"info lcd ctrl\tPrint LCD ctrl\n" +
+		"info lcd pal\tPrint LCD palette\n" +
+		"info lcd tileMap\tPrint tile map\n" +
+		"info lcd tileImg\tPrint tile image\n" +
+		"info joypad\tPrint Joypad info\n" +
 		"set step\tSet showStep status.\n" +
 		"delete bp\tbp\tDelete breakpoint at address. eg. 'delete bp 0x0150'\n" +
 		"exit\t\tExit Program\n\n")
@@ -96,6 +108,10 @@ func (d *Debuger) debugFuncDelete(args []string) bool {
 
 func (d *Debuger) debugFuncSet(args []string) bool {
 	return d.debugFuncSubCmd(debugFuncSetMap, args)
+}
+
+func (d *Debuger) debugFuncInfoLcd(args []string) bool {
+	return d.debugFuncSubCmd(debugFuncInfoLcdMap, args)
 }
 
 func (d *Debuger) debugFuncNext(args []string) bool {
@@ -254,9 +270,9 @@ func (d *Debuger) debugFuncInfoCycle(args []string) bool {
 	return true
 }
 
-func (d *Debuger) debugFuncInfoLCD(args []string) bool {
+func (d *Debuger) debugFuncInfoLcdStat(args []string) bool {
 	l := d.gb.Lcd
-	fmt.Printf("== LCD Info ==\n" +
+	fmt.Printf("== LCD Status Info ==\n" +
 		"LCD Display Enabled\t: %t\n" +
 		"LCD Cycles\t\t: %d/%d\n",
 		l.isLCDDisplayEnabled(), l.scanLineCounter, LCD_FULL_CYCLES)
@@ -286,6 +302,172 @@ func (d *Debuger) debugFuncInfoLCD(args []string) bool {
 
 	return true
 }
+
+func (d *Debuger) debugFuncInfoLcdCtrl(args []string) bool {
+	bit2str := func(b byte, s1, s2 string) string {
+		if b > 0 {
+			return s1
+		} else {
+			return s2
+		}
+	}
+	ctrl := d.gb.Mem.Read(LCD_CTRL_ADDR)
+	fmt.Printf("== LCD Control Info ==\n" +
+		"LCD Enable:\t\t%s\n" +
+		"Win Enable:\t\t%s\n" +
+		"Win Tile Map Select:\t%s\n" +
+		"Bg Enable:\t\t%s\n" +
+		"Bg Tile Map Select:\t%s\n" +
+		"Tile Data Select:\t%s\n" +
+		"Obj Enable:\t\t%s\n" +
+		"Obj Size:\t\t%s\n\n",
+		bit2str(ctrl & LcdCtrlLCDEnable, "On", "Off"),
+		bit2str(ctrl & LcdCtrlWinEnable, "On", "Off"),
+		bit2str(ctrl & LcdCtrlWinTileMapSelect, "0x9C00-0x9FFF", "0x9800-0x9BFF"),
+		bit2str(ctrl & LcdCtrlBgEnable, "On", "Off"),
+		bit2str(ctrl & LcdCtrlBgTileMapSelect, "0x9C00-0x9FFF", "0x9800-0x9BFF"),
+		bit2str(ctrl & LcdCtrlTileDataSelect, "0x8000-0x8FFF", "0x8800-0x97FF"),
+		bit2str(ctrl & LcdCtrlObjEnable, "On", "Off"),
+		bit2str(ctrl & LcdCtrlObjSize, "8*16", "8*8"),
+		)
+
+	return true
+}
+
+func (d *Debuger) debugFuncInfoLcdPal(args []string) bool {
+	printPal := func(addr uint16, name string) {
+		pal := d.gb.Mem.Read(addr)
+		fmt.Printf("%s:", name)
+
+		colorMap := map[byte]string{
+			0x00: "White",
+			0x01: "Light gray",
+			0x02: "Dark gray",
+			0x03: "Black",
+		}
+		for i := 0; i < 4; i++ {
+			color := (pal >> (i * 2)) & 0x03
+			fmt.Printf("\t%d:%s", i, colorMap[color])
+		}
+		fmt.Printf("\n")
+	}
+	fmt.Printf("== LCD Palettes Info ==\n")
+	printPal(LCD_BGP_ADDR, "BGP")
+	printPal(LCD_OBP0_ADDR, "OBP0")
+	printPal(LCD_OBP1_ADDR, "OBP1")
+	fmt.Printf("\n\n")
+	return true
+}
+
+func (d *Debuger) debugFuncInfoLcdTileMap(args []string) bool {
+	if len(args) < 1 {
+		fmt.Printf("Usage: info lcd tileMap [lineAddr]")
+		return true
+	}
+
+	baseAddr, err := strconv.ParseUint(args[0], 0, 16)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+
+	lines := 1
+	if len(args) > 1 {
+		lines, _ = strconv.Atoi(args[1])
+	}
+
+	fmt.Printf("============ Dump Tile Map from 0x%04X =============\n" +
+		"addr\t00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19\n" +
+		"---------------------------------------------------------------------", baseAddr)
+	for line := 0; line < lines; line++ {
+		begin := uint16(baseAddr) + uint16(line) * 32
+		end := begin + 20
+		for i := begin; i < end; i++ {
+			if (i-begin)%20 == 0 {
+				fmt.Printf("\n0x%04X\t", uint16(i))
+			}
+			fmt.Printf("%02X ", d.gb.Mem.Read(uint16(i)))
+		}
+	}
+	fmt.Printf("\n")
+	return true
+}
+
+func (d *Debuger) debugFuncInfoLcdTileImg(args []string) bool {
+	if len(args) < 1 {
+		fmt.Printf("Usage: info lcd tileImg [TileNo]")
+		return true
+	}
+	tileNo, err := strconv.ParseUint(args[0], 0, 16)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+
+	ctrl := d.gb.Mem.Read(LCD_CTRL_ADDR)
+	var tileDataBaseAddr uint16 = 0x8800
+	tileDataSign := true
+	if ctrl & LcdCtrlTileDataSelect > 0 {
+		tileDataBaseAddr = 0x8000
+		tileDataSign = false
+	}
+
+	var tileDataAddr uint16
+	if tileDataSign {
+		//patterns have signed numbers from -128 to 127 (i.e. pattern #0 lies at address $9000)
+		tileDataAddr = tileDataBaseAddr + uint16(int16(int8(tileNo)) + 128) * 16
+	} else {
+		tileDataAddr = tileDataBaseAddr + uint16(tileNo) * 16
+	}
+
+	var img [8][8]uint8
+	colorMap := d.colorMap(LCD_BGP_ADDR)
+	for row := uint16(0); row < 8; row++ {
+		loData := d.gb.Mem.Read(tileDataAddr + row * 2)
+		hiData := d.gb.Mem.Read(tileDataAddr + row * 2 + 1)
+
+		for col := uint8(0); col < 8; col++ {
+			bitPos := 7 - col
+
+			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
+			//and the second byte defines the upper bits of the color numbers.
+			colorNum := (hiData >> bitPos) & 0x01
+			colorNum = colorNum << 1
+			colorNum = colorNum | ((loData >> bitPos) & 0x01)
+
+			img[row][col] = colorMap[colorNum]
+			fmt.Printf("row: %d col: %d nu: %d c: %d\n", row, col, colorNum, colorMap[colorNum])
+		}
+	}
+
+	tmap := map[byte]string {
+		0: "\033[107m  ",
+		1: "\033[47m  ",
+		2: "\033[100m  ",
+		3: "\033[40m  ",
+	}
+	fmt.Printf("== Tile [%02X] at 0x%04X == \n", tileNo, tileDataAddr)
+	for row := byte(0); row < 8; row++ {
+		for col := byte(0); col < 8; col++ {
+			fmt.Print(tmap[img[row][col]])
+		}
+		fmt.Printf("\033[0m\n")
+	}
+	fmt.Printf("\n")
+	return true
+}
+
+func (d *Debuger) colorMap(addr uint16) (r map[byte]byte) {
+	pal := d.gb.Mem.Read(addr)
+	r = map[byte]byte{}
+
+	for i := byte(0); i < 4; i++ {
+		color := (pal >> (i * 2)) & 0x03
+		r[i] = color
+	}
+	return
+}
+
 
 func (d *Debuger) debugFuncInfoTimer(args []string) bool {
 	t := d.gb.Timer

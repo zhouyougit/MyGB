@@ -241,8 +241,8 @@ func (l *Lcd) randerTiles() {
 
 		tileLine := curY % 8
 
-		loData := m.Read(tileDataAddr + tileLine)
-		hiData := m.Read(tileDataAddr + tileLine + 1)
+		loData := m.Read(tileDataAddr + tileLine * 2)
+		hiData := m.Read(tileDataAddr + tileLine * 2 + 1)
 
 		for bitPos := int16(7 - curX % 8); bitPos >= 0 && px < 160; bitPos--{
 
