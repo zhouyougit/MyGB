@@ -187,7 +187,11 @@ func (l *Lcd) drawScanLine() {
 	ctrl := l.gb.Mem.Read(LCD_CTRL_ADDR)
 
 	if ctrl & LcdCtrlBgEnable > 0 {
-		l.randerTiles()
+		l.randerBg()
+	}
+
+	if ctrl & LcdCtrlWinEnable > 0 {
+		l.randerWin()
 	}
 
 	if ctrl & LcdCtrlObjEnable > 0 {
@@ -195,7 +199,7 @@ func (l *Lcd) drawScanLine() {
 	}
 }
 
-func (l *Lcd) randerTiles() {
+func (l *Lcd) randerBg() {
 	m := l.gb.Mem
 	ctrl := m.Read(LCD_CTRL_ADDR)
 
@@ -240,6 +244,78 @@ func (l *Lcd) randerTiles() {
 		}
 
 		tileLine := curY % 8
+
+		loData := m.Read(tileDataAddr + tileLine * 2)
+		hiData := m.Read(tileDataAddr + tileLine * 2 + 1)
+
+		for bitPos := int16(7 - curX % 8); bitPos >= 0 && px < 160; bitPos--{
+
+			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
+			//and the second byte defines the upper bits of the color numbers.
+			colorNum := (hiData >> bitPos) & 0x01
+			colorNum = colorNum << 1
+			colorNum = colorNum | ((loData >> bitPos) & 0x01)
+
+			r, g, b := l.getMonochromeColor(colorNum, LCD_BGP_ADDR)
+
+			l.screen[px][ly] = [3]byte{r,g,b}
+			px++
+		}
+		px--
+	}
+}
+
+func (l *Lcd) randerWin() {
+	m := l.gb.Mem
+	ctrl := m.Read(LCD_CTRL_ADDR)
+
+	wx := m.Read(LCD_WX_ADDR)
+	wy := m.Read(LCD_WY_ADDR) - 7
+
+	//Bit 3 - BG Tile Map Display Select     (0=9800-9BFF, 1=9C00-9FFF)
+	var winMapBaseAddr uint16 = 0x9800
+	if ctrl & LcdCtrlWinTileMapSelect > 0 {
+		winMapBaseAddr = 0x9C00
+	}
+
+	//Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+	var tileDataBaseAddr uint16 = 0x8800
+	tileDataSign := true
+	if ctrl & LcdCtrlTileDataSelect > 0 {
+		tileDataBaseAddr = 0x8000
+		tileDataSign = false
+	}
+
+	ly := m.Read(LCD_LY_ADDR)
+	curY := int16(ly) - int16(wy)
+	if curY < 0 {
+		return
+	}
+
+	//Each tile is sized 8x8 pixels
+	tileRow := uint16(curY) / 8
+
+	for px := uint16(0); px < 160; px++ {
+		curX := int16(px) - int16(wx)
+		if curX < 0 {
+			continue
+		}
+
+		//Each tile is sized 8x8 pixels
+		tileCol := uint16(curX) / 8
+
+		//The gameboy contains two 32x32 tile background maps in VRAM at addresses 9800h-9BFFh and 9C00h-9FFFh
+		tileNo := m.Read(winMapBaseAddr + tileRow * 32 + tileCol)
+
+		var tileDataAddr uint16
+		if tileDataSign {
+			//patterns have signed numbers from -128 to 127 (i.e. pattern #0 lies at address $9000)
+			tileDataAddr = tileDataBaseAddr + uint16(int16(int8(tileNo)) + 128) * 16
+		} else {
+			tileDataAddr = tileDataBaseAddr + uint16(tileNo) * 16
+		}
+
+		tileLine := uint16(curY) % 8
 
 		loData := m.Read(tileDataAddr + tileLine * 2)
 		hiData := m.Read(tileDataAddr + tileLine * 2 + 1)
