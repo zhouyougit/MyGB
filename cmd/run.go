@@ -22,7 +22,7 @@ var (
 			gameBoyArgs.ROMPath = args[0]
 
 			monitor := &gb.FyneMonitor{}
-			gameBoy, err := gb.NewGameBoy(&gameBoyArgs, monitor)
+			gameBoy, err := gb.NewGameBoy(&gameBoyArgs, monitor, monitor)
 			if err != nil {
 				fmt.Errorf("failed to Run GameBoy Game [%s] :%v", gameBoyArgs.ROMPath, err)
 				return

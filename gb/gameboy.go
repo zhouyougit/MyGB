@@ -24,6 +24,7 @@ type GameBoy struct {
 	Lcd Lcd
 	Joypad Joypad
 	Monitor Monitor
+	Controller JoypadController
 
 	//Video
 	//Sound
@@ -39,12 +40,13 @@ type GameBoy struct {
 	finish sync.WaitGroup
 }
 
-func NewGameBoy(args *GameBoyArgs, monitor Monitor) (*GameBoy, error) {
+func NewGameBoy(args *GameBoyArgs, monitor Monitor, controller JoypadController) (*GameBoy, error) {
 	gb := &GameBoy{
 		Cartridge: Cartridge{
 			romPath: args.ROMPath,
 		},
 		Monitor: monitor,
+		Controller: controller,
 		debug: args.Debug,
 		fps: args.FPS,
 		cyclesInFrame: CPU_MAIN_FREQUENCY / args.FPS,
@@ -87,9 +89,11 @@ func (gb *GameBoy) init() error {
 
 	gb.Lcd.Init(gb)
 
-	gb.Monitor.Init(&gb.Lcd.screen, gb.Cartridge.Header.Title)
+	gb.Monitor.InitMonitor(&gb.Lcd.screen, gb.Cartridge.Header.Title)
 
 	gb.Joypad.Init(gb)
+
+	gb.Controller.InitJoypad(&gb.Joypad)
 
 	if gb.debug {
 		gb.Debuger = NewDebuger(gb)

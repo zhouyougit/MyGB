@@ -36,6 +36,8 @@ const (
 	LCD_HDMA4_ADDR uint16 = 0xFF54
 	LCD_HDMA5_ADDR uint16 = 0xFF55
 
+	//LCD OAM
+	LCD_OAM_ADDR uint16 = 0xFE00
 	/**
 	Mode 0 is present between 201-207 clks, 2 about 77-83 clks, and 3 about 169-175 clks.
 	A complete cycle through these states takes 456 clks.
@@ -336,7 +338,86 @@ func (l *Lcd) randerWin() {
 }
 
 func (l *Lcd) randerSprites() {
+	m := l.gb.Mem
+	ctrl := m.Read(LCD_CTRL_ADDR)
 
+	var ySize byte = 8
+	if ctrl & LcdCtrlObjSize > 0 {
+		ySize = 16
+	}
+
+	for sprite := uint16(0); sprite < 40; sprite++ {
+		idx := sprite * 4
+		yPos := m.Read(LCD_OAM_ADDR + idx) - 16
+
+		ly := m.Read(LCD_LY_ADDR)
+		if ly < yPos || ly > (yPos + ySize) {
+			continue
+		}
+
+		xPos := m.Read(LCD_OAM_ADDR + idx + 1) - 8
+		tileNo := m.Read(LCD_OAM_ADDR + idx + 2)
+		attr := m.Read(LCD_OAM_ADDR + idx + 3)
+
+		/**
+		Byte3 - Attributes/Flags:
+		  Bit7   OBJ-to-BG Priority (0=OBJ Above BG, 1=OBJ Behind BG color 1-3)
+		         (Used for both BG and Window. BG color 0 is always behind OBJ)
+		  Bit6   Y flip          (0=Normal, 1=Vertically mirrored)
+		  Bit5   X flip          (0=Normal, 1=Horizontally mirrored)
+		  Bit4   Palette number  **Non CGB Mode Only** (0=OBP0, 1=OBP1)
+		  Bit3   Tile VRAM-Bank  **CGB Mode Only**     (0=Bank 0, 1=Bank 1)
+		  Bit2-0 Palette number  **CGB Mode Only**     (OBP0-7)
+		 */
+		priority := attr & (0x1 << 7) > 0
+		yFlip := attr & (0x1 << 6) > 0
+		xFlip := attr & (0x1 << 5) > 0
+		palNo := attr & (0x1 << 4) > 0
+
+		tileLine := ly - yPos
+
+		if yFlip {
+			tileLine = ySize - tileLine
+		}
+		tileDataAddr := 0x8000 + uint16(tileNo) * 16
+
+		loData := m.Read(tileDataAddr + uint16(tileLine) * 2)
+		hiData := m.Read(tileDataAddr + uint16(tileLine) * 2 + 1)
+
+		palAddr := LCD_OBP0_ADDR
+		if palNo {
+			palAddr = LCD_OBP1_ADDR
+		}
+		colorMap := l.getMonochromeColorMap(palAddr)
+
+		for tileCol := int8(7); tileCol >= 0; tileCol-- {
+			px := xPos + 7 - byte(tileCol)
+			if px < 0 || px >= 160 || ly < 0 || ly >= 144{
+				continue
+			}
+			bitPos := tileCol
+			if xFlip {
+				bitPos = 7 - tileCol
+			}
+
+			//For each line, the first byte defines the least significant bits of the color numbers for each pixel,
+			//and the second byte defines the upper bits of the color numbers.
+			colorNum := (hiData >> bitPos) & 0x01
+			colorNum = colorNum << 1
+			colorNum = colorNum | ((loData >> bitPos) & 0x01)
+
+			color := colorMap[colorNum]
+
+			if l.isWhite(l.screen[px][ly]) || priority {
+				l.screen[px][ly] = color
+			}
+		}
+	}
+
+}
+
+func (l *Lcd) isWhite(color [3]byte) bool {
+	return color == [3]byte{0xFF, 0xFF, 0xFF}
 }
 
 func (l *Lcd) getMonochromeColorMap(addr uint16) map[byte][3]byte {

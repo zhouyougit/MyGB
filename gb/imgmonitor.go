@@ -17,12 +17,12 @@ type ImgRenderer struct {
 	x int
 }
 
-func (m *ImgMonitor) Init(screen *[160][144][3] uint8, title string) error {
+func (m *ImgMonitor) InitMonitor(screen *[160][144][3] uint8, title string) error {
 	m.renderer = &ImgRenderer{
 		screen: screen,
 		x: 4,
 	}
-	return m.BaseMonitor.Init(screen, title)
+	return m.BaseMonitor.InitMonitor(screen, title)
 }
 
 func (r *ImgRenderer) Render() {

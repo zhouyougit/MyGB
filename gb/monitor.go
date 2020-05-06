@@ -1,7 +1,7 @@
 package gb
 
 type Monitor interface {
-	Init(*[160][144][3] uint8, string) error
+	InitMonitor(*[160][144][3] uint8, string) error
 
 	RenderScreen()
 
@@ -25,7 +25,7 @@ type BaseMonitor struct {
 	renderer MonitorRenderer
 }
 
-func (m *BaseMonitor) Init(screen *[160][144][3] uint8, title string) error {
+func (m *BaseMonitor) InitMonitor(screen *[160][144][3] uint8, title string) error {
 	m.screen = screen
 	m.title = title
 	m.renderSignal = make(chan struct{}, 1)

@@ -16,6 +16,10 @@ type Joypad struct {
 	selectButton bool // true: button / false: direction
 }
 
+type JoypadController interface {
+	InitJoypad(jp *Joypad) error
+}
+
 func (j *Joypad) Init(gb *GameBoy) error {
 	j.gb = gb
 	j.status = 0xFF

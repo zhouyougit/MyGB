@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
+	"fyne.io/fyne/driver/desktop"
 	"image"
 	"image/color"
 )
@@ -22,6 +23,8 @@ type FyneMonitor struct {
 	stopped bool
 
 	exitListener []func()
+
+	jp *Joypad
 }
 
 type FyneLayout struct {
@@ -37,7 +40,7 @@ func (f FyneLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(160 * f.x, 144 * f.x)
 }
 
-func (m *FyneMonitor) Init(screen *[160][144][3] uint8, title string) error {
+func (m *FyneMonitor) InitMonitor(screen *[160][144][3] uint8, title string) error {
 	m.screen = screen
 	m.title = title
 	m.x = 2
@@ -99,6 +102,8 @@ func (m *FyneMonitor) Run(stop chan struct{}) {
 		}
 	}()
 
+	window.Canvas().(desktop.Canvas).SetOnKeyDown(m.buttonDown)
+	window.Canvas().(desktop.Canvas).SetOnKeyUp(m.buttonUp)
 	window.SetOnClosed(func() {
 		for _, el := range m.exitListener {
 			el()
@@ -107,4 +112,32 @@ func (m *FyneMonitor) Run(stop chan struct{}) {
 		m.app.Quit()
 	})
 	window.ShowAndRun()
+}
+
+func (m *FyneMonitor) InitJoypad(jp *Joypad) error {
+	m.jp = jp
+	return nil
+}
+
+var keyMap = map[fyne.KeyName]byte {
+	fyne.KeyD: ButtonRight,
+	fyne.KeyA: ButtonLeft,
+	fyne.KeyW: ButtonUp,
+	fyne.KeyS: ButtonDown,
+	fyne.KeyJ: ButtonA,
+	fyne.KeyK: ButtonB,
+	fyne.KeySpace: ButtonSelect,
+	fyne.KeyEnter: ButtonStart,
+}
+
+func (m *FyneMonitor) buttonDown(ev *fyne.KeyEvent) {
+	if k, ok := keyMap[ev.Name]; ok {
+		m.jp.PressButton(k)
+	}
+}
+
+func (m *FyneMonitor) buttonUp(ev *fyne.KeyEvent) {
+	if k, ok := keyMap[ev.Name]; ok {
+		m.jp.ReleaseButton(k)
+	}
 }

@@ -135,8 +135,11 @@ func (mem *Memory) Write(address uint16, data byte) {
 	} else if address == 0xFF46 {
 		//FF46 - DMA - DMA Transfer and Start Address (W)
 		mem.doDMA(data)
+	} else if (address >= 0xFEA0) && (address < 0xFF00) {
+		//FEA0-FEFF   Not Usable
+	} else {
+		mem.raw[address] = data
 	}
-	mem.raw[address] = data
 }
 
 func (mem *Memory) WriteUint16(address uint16, data uint16) {
