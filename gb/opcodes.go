@@ -1362,7 +1362,7 @@ var OPCodesMap = [0x100]OPCode {
 	0xE6: {
 		Func: (*Cpu).opCodeE6,
 		Cycles: []int{8, 0},
-		Length: 1,
+		Length: 2,
 		Mnemonic: "AND d8",
 	},
 	0xE7: {
@@ -1380,7 +1380,7 @@ var OPCodesMap = [0x100]OPCode {
 	0xE9: {
 		Func: (*Cpu).opCodeE9,
 		Cycles: []int{4, 0},
-		Length: 3,
+		Length: 1,
 		Mnemonic: "JP HL",
 	},
 	0xEA: {
@@ -4147,7 +4147,7 @@ func (cpu *Cpu)opCodeF0() byte {
 
 // POP AF
 func (cpu *Cpu)opCodeF1() byte {
-	cpu.reg.setAF(cpu.gb.Mem.ReadUint16(cpu.reg.SP))
+	cpu.reg.setAF(cpu.gb.Mem.ReadUint16(cpu.reg.SP) & 0xFFF0)
 	cpu.reg.SP += 2
 	return 0
 }

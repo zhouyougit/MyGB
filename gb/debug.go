@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/c-bata/go-prompt"
+	"os"
 	"strings"
 )
 
@@ -11,19 +12,36 @@ type Debuger struct {
 	gb *GameBoy
 	p *prompt.Prompt
 	lastCmd string
-	breakpoints map[uint16]bool
+	breakpoints map[uint16]BreakPoint
 	step bool
 	showStep bool
 	stepSkipCount int
+
+	saveFile *os.File
+	savePath string
+
+	finishAddr uint16
 }
 
+type BreakPoint struct {
+	enable bool
+	temporary bool
+}
+
+var CallOpCode = map[byte]OPCode {
+	0xC4: OPCodesMap[0xC4],
+	0xCC: OPCodesMap[0xCC],
+	0xCD: OPCodesMap[0xCD],
+	0xD4: OPCodesMap[0xD4],
+	0xDC: OPCodesMap[0xDC],
+}
 
 func NewDebuger(gb *GameBoy) *Debuger {
 	d := &Debuger{
 		gb: gb,
 		step: true,
 		showStep: gb.debug,
-		breakpoints: make(map[uint16]bool),
+		breakpoints: make(map[uint16]BreakPoint),
 	}
 	d.p = prompt.New(d.debugParse, d.debugComplate, prompt.OptionPrefix("debug> "))
 	return d
@@ -35,8 +53,11 @@ func (d *Debuger)Stop() {
 func (d *Debuger) skipStep() bool {
 	if !d.step {
 		bp, exist := d.breakpoints[d.gb.Cpu.reg.PC]
-		if exist && bp {
+		if exist && bp.enable {
 			d.step = true
+			if bp.temporary {
+				delete(d.breakpoints, d.gb.Cpu.reg.PC)
+			}
 		} else {
 			return true
 		}
@@ -59,6 +80,11 @@ func (d *Debuger) DebugOpcode() {
 		d.printInstruction(pc, !skipStep)
 	}
 
+	isCall, nextPC := d.checkCall(pc)
+	if isCall {
+		d.finishAddr = nextPC
+	}
+
 	if skipStep {
 		return
 	}
@@ -77,7 +103,11 @@ func (d *Debuger) DebugInterrupt(i Interrupt) {
 	skipStep := d.skipStep()
 
 	if d.showStep || !skipStep {
-		fmt.Printf("->$\tPush PC; JP 0x%04X;\t(Interrupted by %s)\n", i.Addr, i.Name)
+		fmt.Printf("  Int\tPush PC; JP 0x%04X;\t(Interrupted by %s)\n", i.Addr, i.Name)
+		if d.saveFile != nil {
+			str := fmt.Sprintf("Int\tPush PC; JP 0x%04X;\t(Interrupted by %s)\n", i.Addr, i.Name)
+			d.saveFile.WriteString(str)
+		}
 	}
 
 	if skipStep {
@@ -165,6 +195,10 @@ func (d *Debuger) printInstruction(addr uint16, curr bool) {
 	var argValue = d.generateOpCodeArgValueString(opCode, argsAddr)
 
 	fmt.Printf("%s$0x%04X\t%s%s%s%s\n", prefix, addr, opCode.Mnemonic, tab, argStr, argValue)
+	if d.saveFile != nil {
+		str := fmt.Sprintf("$0x%04X\t%s%s%s%s\n", addr, opCode.Mnemonic, tab, argStr, argValue)
+		d.saveFile.WriteString(str)
+	}
 }
 
 func (d *Debuger) generateOpCodeArgValueString(code OPCode, addr uint16) string {
@@ -297,4 +331,12 @@ func (d *Debuger) generateOpCodeArgValueByCmd(cmd string) string {
 		return fmt.Sprintf("A=%02X ", d.gb.Cpu.reg.A)
 	}
 	return ""
+}
+
+func (d *Debuger) checkCall(pc uint16) (bool, uint16) {
+	opCodeByte := d.gb.Mem.Read(pc)
+	if opCode, exist := CallOpCode[opCodeByte]; exist {
+		return true, pc + opCode.Length
+	}
+	return false, 0
 }

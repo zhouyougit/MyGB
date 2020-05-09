@@ -3,6 +3,7 @@ package gb
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 )
 
@@ -13,6 +14,9 @@ var debugFuncMap = map[string]debugFunc {
 	"h" : (* Debuger).debugFuncHelp,
 	"next" : (* Debuger).debugFuncNext,
 	"n" : (* Debuger).debugFuncNext,
+	"step" : (* Debuger).debugFuncStep,
+	"s" : (* Debuger).debugFuncStep,
+	"finish" : (* Debuger).debugFuncFinish,
 	"list" : (* Debuger).debugFuncList,
 	"l" : (* Debuger).debugFuncList,
 	"print" : (* Debuger).debugFuncPrint,
@@ -27,6 +31,9 @@ var debugFuncMap = map[string]debugFunc {
 	"delete" : (* Debuger).debugFuncDelete,
 	"set" : (* Debuger).debugFuncSet,
 	"render" : (* Debuger).debugFuncRender,
+	"stack" : (* Debuger).debugFuncStack,
+	"save" : (* Debuger).debugFuncSave,
+	"opcode" : (* Debuger).debugFuncOpCode,
 	"exit" : (* Debuger).debugFuncExit,
 }
 
@@ -65,6 +72,8 @@ func (d *Debuger) debugFuncHelp(args []string) bool {
 		"dump,d\tDump data from Memory address range. eg. 'dump 0x0100 0x0110'\n" +
 		"continue,c\tContinue run\n" +
 		"break,b\tCreate breakpoint at address. eg. 'break 0x0150'\n" +
+		"stack\tdump all goroutine stack\n" +
+		"save\tsave all opcode into file. eg. 'save dump.log'\n" +
 		"info bp\tPrint all breakpoints\n" +
 		"info cpu\tPrint CPU info\n" +
 		"info cycle\tPrint Main Cycle info\n" +
@@ -115,6 +124,15 @@ func (d *Debuger) debugFuncInfoLcd(args []string) bool {
 }
 
 func (d *Debuger) debugFuncNext(args []string) bool {
+	isCall, nextPC := d.checkCall(d.gb.Cpu.reg.PC)
+	if isCall {
+		d.breakpoints[nextPC] = BreakPoint{enable:true, temporary:true}
+		d.step = false
+	}
+	return false
+}
+
+func (d *Debuger) debugFuncStep(args []string) bool {
 	if len(args) > 0 {
 		var err error
 		d.stepSkipCount, err = strconv.Atoi(args[0])
@@ -123,6 +141,12 @@ func (d *Debuger) debugFuncNext(args []string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func (d *Debuger) debugFuncFinish(args []string) bool {
+	d.breakpoints[d.finishAddr] = BreakPoint{enable:true, temporary:true}
+	d.step = false
 	return false
 }
 
@@ -185,15 +209,15 @@ func (d *Debuger) debugFuncBreak(args []string) bool {
 			return true
 		}
 	}
-	d.breakpoints[addr] = true
+	d.breakpoints[addr] = BreakPoint{enable:true, temporary:false}
 	fmt.Printf("Create breakpoint at [0x%04X]\n", addr)
 	return true
 }
 
 func (d *Debuger) debugFuncInfoBreakpoints(args []string) bool {
-	fmt.Printf("name\t\taddr\tenabled\n")
-	for addr, enabled := range d.breakpoints {
-		fmt.Printf("breakpoint\t%04X\t%v\n", addr, enabled)
+	fmt.Printf("name\t\taddr\tenabled\ttemporary\n")
+	for addr, bp := range d.breakpoints {
+		fmt.Printf("breakpoint\t%04X\t%v\t%v\n", addr, bp.enable, bp.temporary)
 	}
 	fmt.Println()
 	return true
@@ -436,7 +460,6 @@ func (d *Debuger) debugFuncInfoLcdTileImg(args []string) bool {
 			colorNum = colorNum | ((loData >> bitPos) & 0x01)
 
 			img[row][col] = colorMap[colorNum]
-			fmt.Printf("row: %d col: %d nu: %d c: %d\n", row, col, colorNum, colorMap[colorNum])
 		}
 	}
 
@@ -515,6 +538,75 @@ func (d *Debuger) debugFuncInfoJoypad(args []string) bool {
 		testBtn(ButtonUp), testBtn(ButtonDown),
 		testBtn(ButtonA), testBtn(ButtonB),
 		testBtn(ButtonSelect), testBtn(ButtonStart))
+	return true
+}
+
+func (d *Debuger) debugFuncStack(args []string) bool {
+	buf := make([]byte, 16384)
+	buf = buf[:runtime.Stack(buf, true)]
+	fmt.Printf("== Stack Info ==\n%s\n", buf)
+	return true
+}
+
+func (d *Debuger) debugFuncSave(args []string) bool {
+	if d.saveFile != nil {
+		d.saveFile.Close()
+		d.saveFile = nil
+		d.savePath = ""
+
+		if len(args) == 0 {
+			fmt.Printf("Saved file %s\n", d.savePath)
+			return true
+		}
+	}
+	if len(args) == 0 {
+		fmt.Println("Usage: save [fileName]")
+		return true
+	}
+	d.savePath = args[0]
+
+	var err error
+	d.saveFile, err = os.OpenFile(d.savePath, os.O_WRONLY | os.O_CREATE, 0664)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+	fmt.Printf("Save into file %s\n", d.savePath)
+	return true
+}
+
+func (d *Debuger) debugFuncOpCode(args []string) bool {
+	if len(args) == 0 {
+		fmt.Println("Usage: opcode [hex]")
+		return true
+	}
+	code := args[0]
+	codeMap := OPCodesMap
+	if len(code) == 2 {
+
+	} else if code[:2] == "CB" {
+		code = code[2:]
+		codeMap = OPCodesMapCB
+	} else {
+		fmt.Printf("Unknown opCode [%X]\n", code)
+		return true
+	}
+	code = "0x" + code
+
+	codeNo, err := strconv.ParseUint(code, 0, 16)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+
+	opCode := codeMap[codeNo]
+	if opCode.Func == nil {
+		fmt.Printf("Unknown opCode [%X]\n", code)
+		return true
+	}
+
+	fmt.Printf("%s\n\n", opCode.Mnemonic)
+
 	return true
 }
 

@@ -224,12 +224,14 @@ func (l *Lcd) randerBg() {
 
 	ly := m.Read(LCD_LY_ADDR)
 	curY := uint16(scy) + uint16(ly)
+	curY = curY % 256
 
 	//Each tile is sized 8x8 pixels
 	tileRow := curY / 8
 
 	for px := uint16(0); px < 160; px++ {
 		curX := uint16(scx) + px
+		curX = curX % 256
 
 		//Each tile is sized 8x8 pixels
 		tileCol := curX / 8

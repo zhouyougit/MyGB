@@ -149,6 +149,7 @@ func (c *Cartridge) LoadRom() error {
 		c.MBC = &MBC1{
 			rom: rom,
 			ram: ram,
+			currentRomBank: 1,
 		}
 		log.Debugf("Use MBC1\n")
 	}
